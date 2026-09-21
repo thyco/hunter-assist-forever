@@ -1,10 +1,10 @@
 # Hunter Assist Forever
 
-A hunter-only addon for WoW Forever that colors ranged ability icons **desaturated red when your target (or mouseover with no target selected) is confirmed too close**. Version 0.2.0 supports all eight default Blizzard action bars, including side bars and main-bar paging. It does not add a glow or change melee ability icons.
+A hunter-only addon for WoW Forever that colors ranged ability icons **desaturated red when your target (or mouseover with no target selected) is confirmed too close**. Version 0.2.1 supports all eight default Blizzard action bars, including side bars and main-bar paging. It does not add a glow or change melee ability icons.
 
 ## Install
 
-1. Extract `dist/HunterAssistForever-0.2.0.zip` into your client's `Interface/AddOns` directory, or copy the repository's `HunterAssistForever` folder there.
+1. Extract `dist/HunterAssistForever-0.2.1.zip` into your client's `Interface/AddOns` directory, or copy the repository's `HunterAssistForever` folder there.
 2. Confirm the resulting path is `Interface/AddOns/HunterAssistForever/HunterAssistForever.toc` with no extra nested directory.
 3. Enable **Hunter Assist Forever** in the character-selection AddOns menu and log in as a hunter. Restart the client if a newly installed addon does not appear.
 
@@ -47,13 +47,17 @@ A selected target takes priority. It must be living and attackable. **Mouseover 
 The addon uses learned harmful spells and their current minimum/maximum range metadata. It first checks each spell by its player spellbook slot using `C_SpellBook.IsSpellBookItemInRange`. If that result is unavailable, restricted, or errors, it falls back to `C_Spell.IsSpellInRange` using the spell ID. A readable true or false spellbook result is authoritative. It colors an ability only when both conditions hold:
 
 - The ability has a positive minimum range and the client explicitly reports it out of range.
-- A learned harmful spell with no minimum range and a maximum no greater than that ability's maximum range is explicitly in range of the same target.
+- A learned harmful spell with no minimum range and a maximum no greater than that ability's maximum range is explicitly in range of the same target, or the nearby interaction fallback below succeeds.
+
+If no spell confirms proximity, the addon tries `CheckInteractDistance(unit, 3)` once per refresh. This nearby interaction check does not depend on Tame Beast being applicable to the creature. It is used only for shots with a maximum range of at least 10 yards and must return an explicit positive result; the shot must still report out of range. Missing, restricted or failed results never imply proximity. `/haf` reports the fallback status and identifies it when it confirms the tint.
+
+The user verified the raw interaction check in combat against both a beast and a humanoid. The combined addon behavior still needs in-game acceptance, including different hitboxes and the edge of the deadzone.
 
 The second check rules out the far side. Merely being out of shooting range is insufficient: distant targets must not turn the icons red. The indicator also applies inside melee distance, where minimum-range shots are still too close. Range evidence does not depend on mana or cooldown readiness.
 
 No valid living attackable target, missing spell information, nil/restricted range results or insufficient evidence leave native appearance unchanged. Attackable neutral targets are supported. A single long-range spell such as Hunter's Mark cannot establish proximity to a shorter-range shot.
 
-**Coverage depends on your learned spells and Forever's API results.** If your only useful probe reaches melee distance, the gap just outside melee may remain uncolored. Missing evidence is intentionally not guessed. Spell metadata and hitbox behavior must be checked on the actual client; this is not an exact distance meter and it does not indicate facing, line of sight, ammunition or overall castability.
+**Coverage depends on your learned spells and Forever's spell/interaction API results.** If neither a spell nor the interaction check confirms proximity, the gap just outside melee may remain uncolored. Missing evidence is intentionally not guessed. Spell metadata and hitbox behavior must be checked on the actual client; this is not an exact distance meter and it does not indicate facing, line of sight, ammunition or overall castability.
 
 ## Performance and presentation
 
@@ -110,7 +114,7 @@ The production addon uses WoW-compatible Lua syntax. Tests load the actual modul
 - Enable Lua errors with `/console scriptErrors 1`, then `/reload`.
 - Open `/haf config`; confirm one **Range checks** box with **Deadzone saturation** checked.
 - Place ranged spells on several visible default bars. Approach a living attackable target from beyond maximum range: far away and valid shooting distance must retain native icons; confirmed too close should turn them desaturated red. Continue into melee distance. Repeat while in combat and on targets with different hitbox sizes.
-- If the gap just outside melee does not color, report `/haf` output and your learned abilities; a suitable readable probe may be unavailable.
+- If the gap just outside melee does not color, report `/haf` output and your learned abilities; a suitable readable proximity check may be unavailable.
 - Check melee spells remain unchanged. With no mouseover, clear the target or return to shooting distance; red must clear.
 - With no target selected, hover a living attackable enemy; coloring should follow its range. Move the mouse away and confirm restoration. Friendly/dead mouseovers must not color icons.
 - While hovering a close enemy, select a different enemy in shooting range; the selected target must take priority. Clear that target to return to mouseover checks. A selected friendly/dead target should clear the tint even with an enemy mouseover.

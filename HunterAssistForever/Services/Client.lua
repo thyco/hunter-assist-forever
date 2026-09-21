@@ -111,6 +111,10 @@ local function rangeCheck(api, ...)
     return result, result and "in range" or "out of range"
 end
 
+function Client.InInteractionRange(unit)
+    return rangeCheck(CheckInteractDistance, unit, 3)
+end
+
 function Client.InRange(id, slot, bank, unit)
     local result, bookStatus
     if Client.Number(slot) and Client.Number(bank) then

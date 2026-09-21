@@ -35,6 +35,8 @@ function Range:BeginUpdate()
     self.results = {}
     self.checks = {}
     self.evidence = {}
+    self.interaction = nil
+    self.interactionStatus = nil
     self.unit = addon.Client.RangeUnit()
     self.hasTarget = self.unit ~= nil
 end
@@ -55,6 +57,14 @@ function Range:Sample(id)
     if value ~= UNKNOWN then
         return value
     end
+end
+
+function Range:InteractionSample()
+    if not self.interactionStatus then
+        self.interaction, self.interactionStatus = addon.Client.InInteractionRange(self.unit)
+    end
+
+    return self.interaction
 end
 
 function Range:IsTooClose(id)
@@ -82,6 +92,14 @@ function Range:IsTooClose(id)
                 break
             end
         end
+
+        -- Index 3 checks nearby interaction distance (at most about 10 yards),
+        -- independent of Tame Beast's creature restriction. It only rules out
+        -- the far side; the shot's own negative range check is still required.
+        if not close and spell.maxRange >= 10 and self:InteractionSample() == true then
+            close = true
+            self.evidence[spell.id] = "interaction"
+        end
     end
 
     self.results[spell.id] = close
@@ -106,7 +124,9 @@ function Range:DescribeChecks()
             .. " yd): spellbook=" .. check.book .. "; spell ID=" .. check.spellID
             .. "; used=" .. check.source
         local evidence = self.evidence[id]
-        if evidence then
+        if evidence == "interaction" then
+            text = text .. "; too close confirmed by CheckInteractDistance (index 3)"
+        elseif evidence then
             text = text .. "; too close confirmed by " .. self.spells[evidence].name .. " (" .. evidence .. ")"
         end
         lines[#lines + 1] = text
@@ -114,6 +134,9 @@ function Range:DescribeChecks()
 
     if #lines == 0 then
         lines[1] = "No eligible ranged spell was checked on a visible default button."
+    end
+    if self.interactionStatus then
+        lines[#lines + 1] = "CheckInteractDistance (index 3): interaction=" .. self.interactionStatus
     end
     table.insert(lines, 1, "Checking: " .. self.unit .. " (living, attackable)")
     lines[#lines + 1] = "Only checks needed for this refresh are listed; unneeded probes are skipped."

@@ -266,5 +266,122 @@ test('duplicate buttons share the spellbook check and skip the ID API when reada
     equal(next(world.queries), nil)
 end)
 
+local function interactionSetup(result)
+    local world, addon = setup()
+    world.ranges[20] = false
+    world.ranges[40] = false
+    world.interactionCalls = 0
+    world.env.CheckInteractDistance = function(unit, index)
+        equal(index, 3)
+        world.interactionUnit = unit
+        world.interactionCalls = world.interactionCalls + 1
+        return result
+    end
+
+    return world, addon
+end
+
+test('interaction confirms close humanoid when creature-restricted spell cannot', function()
+    local world, addon = interactionSetup(true)
+    world.combat = true
+
+    equal(addon.Range:IsTooClose(10), true)
+    equal(world.interactionUnit, 'target')
+    assert(table.concat(addon.Range:DescribeChecks(), '\n'):find('CheckInteractDistance', 1, true))
+end)
+
+test('interaction false cannot confuse far away with too close', function()
+    local _, addon = interactionSetup(false)
+
+    equal(addon.Range:IsTooClose(10), false)
+end)
+
+test('positive interaction does not color a shot in normal shooting range', function()
+    local world, addon = interactionSetup(true)
+    world.ranges[10] = true
+
+    equal(addon.Range:IsTooClose(10), false)
+    equal(world.interactionCalls, 0)
+end)
+
+test('positive interaction cannot replace unknown shot range', function()
+    local world, addon = interactionSetup(true)
+    world.ranges[10] = nil
+
+    equal(addon.Range:IsTooClose(10), false)
+    equal(world.interactionCalls, 0)
+end)
+
+test('unknown interaction leaves the icon native', function()
+    local _, addon = interactionSetup(nil)
+
+    equal(addon.Range:IsTooClose(10), false)
+    assert(table.concat(addon.Range:DescribeChecks(), '\n'):find('interaction=unavailable', 1, true))
+end)
+
+test('restricted interaction is ignored without exposing its value', function()
+    local world, addon = interactionSetup(nil)
+    world.env.CheckInteractDistance = function() return world.secret end
+
+    equal(addon.Range:IsTooClose(10), false)
+    assert(table.concat(addon.Range:DescribeChecks(), '\n'):find('interaction=restricted', 1, true))
+end)
+
+test('interaction API errors leave the icon native', function()
+    local world, addon = interactionSetup(nil)
+    world.env.CheckInteractDistance = function() error('private payload') end
+
+    equal(addon.Range:IsTooClose(10), false)
+    local details = table.concat(addon.Range:DescribeChecks(), '\n')
+    assert(details:find('interaction=error', 1, true))
+    assert(not details:find('private payload', 1, true))
+end)
+
+test('interaction bound cannot prove proximity for shorter maximum range spells', function()
+    local world, addon = interactionSetup(true)
+    world.spells[10].maxRange = 9
+    addon.Range:Rebuild()
+
+    equal(addon.Range:IsTooClose(10), false)
+    equal(world.interactionCalls, 0)
+end)
+
+test('interaction result is shared across shots and cleared for next refresh', function()
+    local world, addon = interactionSetup(true)
+    world.spells[30].minRange = 8
+    world.ranges[30] = false
+    addon.Range:Rebuild()
+
+    equal(addon.Range:IsTooClose(10), true)
+    equal(addon.Range:IsTooClose(30), true)
+    equal(world.interactionCalls, 1)
+
+    addon.Range:BeginUpdate()
+    equal(addon.Range:IsTooClose(10), true)
+    equal(world.interactionCalls, 2)
+end)
+
+test('interaction fallback uses mouseover only without a selected target', function()
+    local world, addon = interactionSetup(true)
+    world.exists = false
+    world.mouseover = { exists = true, attackable = true, dead = false,
+        ranges = { [10] = false, [20] = false, [40] = false } }
+    addon.Range:BeginUpdate()
+
+    equal(addon.Range:IsTooClose(10), true)
+    equal(world.interactionUnit, 'mouseover')
+end)
+
+test('friendly selected target blocks interaction fallback to mouseover', function()
+    local world, addon = interactionSetup(true)
+    world.attackable = false
+    world.mouseover.exists = true
+    world.mouseover.attackable = true
+    addon.Range:BeginUpdate()
+
+    equal(addon.Range:IsTooClose(10), false)
+    equal(world.interactionCalls, 0)
+end)
+
 print(string.format('\n%d passed, %d failed', passed, failed))
 os.exit(failed == 0 and 0 or 1)
