@@ -1,0 +1,17 @@
+## Interface: 16001
+## Title: Hunter Assist Forever
+## Notes: Desaturates ranged ability icons red when the current target is confirmed too close.
+## Author: Hunter Assist Forever
+## Version: 0.1.0
+## SavedVariables: HunterAssistForeverDB
+
+Core.lua
+Services/Config.lua
+Services/Client.lua
+Services/Range.lua
+Services/Buttons.lua
+Services/IconTint.lua
+Features/Deadzone.lua
+Services/SettingsWidgets.lua
+SettingsPanel.lua
+Bootstrap.lua
