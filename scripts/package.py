@@ -26,6 +26,13 @@ def main():
                 raise SystemExit(f"Invalid or missing manifest entry: {entry}")
             files.append(source)
 
+    for asset in sorted((ADDON / "Media").rglob("*")):
+        if asset.is_file():
+            source = asset.resolve()
+            if not source.is_relative_to(ADDON):
+                raise SystemExit(f"Asset is outside the addon directory: {asset}")
+            files.append(source)
+
     destination = ROOT / "dist" / f"HunterAssistForever-{version[1]}.zip"
     destination.parent.mkdir(exist_ok=True)
     with zipfile.ZipFile(destination, "w", zipfile.ZIP_DEFLATED) as archive:

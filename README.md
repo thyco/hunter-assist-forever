@@ -1,14 +1,16 @@
 # Hunter Assist Forever
 
-A hunter-only addon for WoW Forever that colors ranged ability icons **desaturated red when your current target is confirmed too close**. Version 0.1.0 supports all eight default Blizzard action bars, including side bars and main-bar paging. It does not add a glow or change melee ability icons.
+A hunter-only addon for WoW Forever that colors ranged ability icons **desaturated red when your current target is confirmed too close**. Version 0.1.1 supports all eight default Blizzard action bars, including side bars and main-bar paging. It does not add a glow or change melee ability icons.
 
 ## Install
 
-1. Extract `dist/HunterAssistForever-0.1.0.zip` into your client's `Interface/AddOns` directory, or copy the repository's `HunterAssistForever` folder there.
+1. Extract `dist/HunterAssistForever-0.1.1.zip` into your client's `Interface/AddOns` directory, or copy the repository's `HunterAssistForever` folder there.
 2. Confirm the resulting path is `Interface/AddOns/HunterAssistForever/HunterAssistForever.toc` with no extra nested directory.
 3. Enable **Hunter Assist Forever** in the character-selection AddOns menu and log in as a hunter. Restart the client if a newly installed addon does not appear.
 
 The manifest targets Forever interface **16001**, matching the paladin addon. Local tests cannot establish in-game compatibility; see the acceptance checks below.
+
+The AddOns list uses the supplied hunter artwork, bundled as a 256×256 transparent TGA in `HunterAssistForever/Media/Hunter.tga`.
 
 ## Settings
 
