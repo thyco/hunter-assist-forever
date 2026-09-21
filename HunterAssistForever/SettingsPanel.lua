@@ -34,7 +34,7 @@ function panel:Initialize()
         end
     )
     self.controls.deadzoneSaturation = widgets.Checkbox(section, "Deadzone saturation", -62, setting,
-        "Tint ranged ability icons desaturated red when your current target is confirmed too close. Applies to hunters only.")
+        "Tint ranged ability icons desaturated red when your living attackable target is confirmed too close. With no target selected, checks your mouseover. Applies to hunters only.")
 
     canvas:SetScript("OnShow", function()
         self:Refresh()

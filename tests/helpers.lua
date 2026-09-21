@@ -15,6 +15,7 @@ function Helpers.new()
         learned = { 10, 20, 30, 40 },
         ranges = { [10] = false, [20] = true, [30] = true, [40] = false },
         queries = {},
+        mouseover = { exists = false, attackable = false, dead = false, ranges = {} },
         actions = {},
         exists = true,
         attackable = true,
@@ -35,18 +36,23 @@ function Helpers.new()
     env._G = env
     env.issecretvalue = function(value) return rawequal(value, secret) end
     env.Enum = { SpellBookSpellBank = { Player = 0 }, SpellBookItemType = { Spell = 1, FutureSpell = 2, PetAction = 3 } }
-    env.UnitExists = function(unit) assert(unit == 'target'); return world.exists end
-    env.UnitCanAttack = function(player, unit) assert(player == 'player' and unit == 'target'); return world.attackable end
-    env.UnitIsDeadOrGhost = function(unit) assert(unit == 'target'); return world.dead end
+    local function unitState(unit)
+        assert(unit == 'target' or unit == 'mouseover')
+        if unit == 'mouseover' then return world.mouseover end
+        return world
+    end
+    env.UnitExists = function(unit) return unitState(unit).exists end
+    env.UnitCanAttack = function(player, unit) assert(player == 'player'); return unitState(unit).attackable end
+    env.UnitIsDeadOrGhost = function(unit) return unitState(unit).dead end
     env.UnitClass = function() return 'Hunter', world.class end
     env.InCombatLockdown = function() return world.combat end
     env.C_Spell = {
         GetSpellInfo = function(id) return world.spells[id] end,
         IsSpellHarmful = function(id) return not world.helpful or not world.helpful[id] end,
         IsSpellInRange = function(id, unit)
-            assert(unit == 'target')
+            local state = unitState(unit)
             world.queries[id] = (world.queries[id] or 0) + 1
-            return world.ranges[id]
+            return state.ranges[id]
         end,
     }
     env.C_SpellBook = {

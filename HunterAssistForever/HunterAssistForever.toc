@@ -1,9 +1,9 @@
 ## Interface: 16001
 ## Title: Hunter Assist Forever
 ## IconTexture: Interface\AddOns\HunterAssistForever\Media\Hunter.tga
-## Notes: Desaturates ranged ability icons red when the current target is confirmed too close.
+## Notes: Desaturates ranged ability icons red when an attackable mouseover or target is confirmed too close.
 ## Author: Hunter Assist Forever
-## Version: 0.1.1
+## Version: 0.1.2
 ## SavedVariables: HunterAssistForeverDB
 
 Core.lua

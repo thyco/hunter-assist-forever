@@ -176,5 +176,95 @@ test('missing range API leaves native appearance', function()
     equal(addon.Range:IsTooClose(10), false)
 end)
 
+test('spellbook check supplies proximity when spell-ID result is unavailable', function()
+    local world, addon = setup()
+    world.ranges[20] = nil
+    world.env.C_SpellBook.IsSpellBookItemInRange = function(slot, bank, unit)
+        equal(bank, 0)
+        equal(unit, 'target')
+        if slot == 1 then return false end
+        if slot == 2 then return true end
+    end
+
+    equal(addon.Range:IsTooClose(10), true)
+end)
+
+test('explicit spellbook false is authoritative over spell-ID true', function()
+    local world, addon = setup()
+    world.env.C_SpellBook.IsSpellBookItemInRange = function() return false end
+
+    equal(addon.Range:IsTooClose(10), false)
+end)
+
+test('restricted spellbook answer safely falls back to readable spell-ID answer', function()
+    local world, addon = setup()
+    world.env.C_SpellBook.IsSpellBookItemInRange = function() return world.secret end
+
+    equal(addon.Range:IsTooClose(10), true)
+    local details = table.concat(addon.Range:DescribeChecks(), '\n')
+    assert(details:find('restricted', 1, true))
+    assert(details:find('spell ID', 1, true))
+end)
+
+test('spellbook API error falls back without exposing the error payload', function()
+    local world, addon = setup()
+    world.env.C_SpellBook.IsSpellBookItemInRange = function() error('raw error payload') end
+
+    equal(addon.Range:IsTooClose(10), true)
+    local details = table.concat(addon.Range:DescribeChecks(), '\n')
+    assert(details:find('error', 1, true))
+    assert(not details:find('raw error payload', 1, true))
+end)
+
+test('diagnostics identify the spell confirming proximity', function()
+    local _, addon = setup()
+    equal(addon.Range:IsTooClose(10), true)
+
+    local details = table.concat(addon.Range:DescribeChecks(), '\n')
+
+    assert(details:find('Ranged shot', 1, true))
+    assert(details:find('Close probe', 1, true))
+    assert(details:find('confirmed by', 1, true))
+end)
+
+test('diagnostics distinguish unknown range from out of range', function()
+    local world, addon = setup()
+    world.ranges[20] = nil
+    equal(addon.Range:IsTooClose(10), false)
+
+    local details = table.concat(addon.Range:DescribeChecks(), '\n')
+
+    assert(details:find('unavailable', 1, true))
+    assert(details:find('out of range', 1, true))
+    assert(not details:find('confirmed by', 1, true))
+end)
+
+test('restricted spell names are never stringified in diagnostics', function()
+    local world, addon = setup()
+    world.spells[20].name = world.secret
+    addon.Range:Rebuild()
+    addon.Range:BeginUpdate()
+    equal(addon.Range:IsTooClose(10), true)
+
+    local details = table.concat(addon.Range:DescribeChecks(), '\n')
+
+    assert(details:find('spell 20', 1, true))
+end)
+
+test('duplicate buttons share the spellbook check and skip the ID API when readable', function()
+    local world, addon = setup()
+    local calls = {}
+    world.env.C_SpellBook.IsSpellBookItemInRange = function(slot)
+        calls[slot] = (calls[slot] or 0) + 1
+        return slot == 2
+    end
+
+    for _ = 1, 96 do equal(addon.Range:IsTooClose(10), true) end
+
+    equal(calls[1], 1)
+    equal(calls[2], 1)
+    equal(next(world.queries), nil)
+end)
+
 print(string.format('\n%d passed, %d failed', passed, failed))
 os.exit(failed == 0 and 0 or 1)

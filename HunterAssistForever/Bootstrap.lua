@@ -46,6 +46,7 @@ frame:SetScript("OnEvent", function(self, event)
             self:RegisterEvent(name)
         end
         self:RegisterEvent("PLAYER_TARGET_CHANGED")
+        self:RegisterEvent("UPDATE_MOUSEOVER_UNIT")
         self:RegisterEvent("PLAYER_REGEN_ENABLED")
         self:RegisterEvent("PLAYER_ENTERING_WORLD")
         self:RegisterEvent("SPELLS_CHANGED")
@@ -53,7 +54,7 @@ frame:SetScript("OnEvent", function(self, event)
         return
     end
 
-    if event == "PLAYER_TARGET_CHANGED" then
+    if event == "PLAYER_TARGET_CHANGED" or event == "UPDATE_MOUSEOVER_UNIT" then
         addon:Refresh(false, catalogDirty)
         catalogDirty = false
     elseif event == "PLAYER_REGEN_ENABLED" or event == "PLAYER_ENTERING_WORLD" then
@@ -87,5 +88,10 @@ SlashCmdList.HUNTERASSISTFOREVER = function(message)
         .. " | /haf config to configure")
     print("Close-range probes: " .. #addon.Range.probes .. " | default buttons: " .. #addon.Deadzone.buttons
         .. " | confirmed too-close buttons: " .. addon.Deadzone.colored)
+    if addon.running then
+        for _, line in ipairs(addon.Range:DescribeChecks()) do
+            print(line)
+        end
+    end
     print("Only confirmed proximity is colored. Missing or restricted range evidence leaves icons unchanged.")
 end

@@ -331,5 +331,145 @@ test('newly learned probe is picked up after spellbook event', function()
     tinted(world.side)
 end)
 
+test('slash diagnostics report current evidence without stale results after disable', function()
+    local world, addon = setup()
+    world.env.SlashCmdList.HUNTERASSISTFOREVER('')
+    local messages = table.concat(world.messages, '\n')
+    assert(messages:find('Close probe', 1, true))
+    assert(messages:find('confirmed by', 1, true))
+    addon.Config.Set('deadzoneSaturation', false)
+    world.messages = {}
+
+    world.env.SlashCmdList.HUNTERASSISTFOREVER('')
+
+    messages = table.concat(world.messages, '\n')
+    assert(not messages:find('confirmed by', 1, true))
+    assert(messages:find('disabled', 1, true))
+end)
+
+test('attackable mouseover colors without a selected target', function()
+    local world = setup(function(w)
+        w.exists = false
+        w.mouseover = { exists = true, attackable = true, dead = false,
+            ranges = { [10] = false, [20] = true, [40] = false } }
+    end)
+
+    tinted(world.side)
+end)
+
+test('selected target takes precedence without mixing mouseover evidence', function()
+    local world = setup()
+    world.ranges[10] = true
+    world.mouseover = { exists = true, attackable = true, dead = false,
+        ranges = { [10] = false, [20] = true, [40] = false } }
+
+    world:fire('UPDATE_MOUSEOVER_UNIT')
+
+    native(world.side)
+end)
+
+test('mouseover departure clears tint on the next poll when no target is selected', function()
+    local world = setup(function(w)
+        w.exists = false
+        w.mouseover = { exists = true, attackable = true, dead = false,
+            ranges = { [10] = false, [20] = true, [40] = false } }
+    end)
+    tinted(world.side)
+    world.mouseover.exists = false
+
+    world:tick(0.1)
+
+    native(world.side)
+end)
+
+test('friendly mouseover cannot color when no attackable target exists', function()
+    local world = setup(function(w)
+        w.exists = false
+        w.mouseover = { exists = true, attackable = false, dead = false,
+            ranges = { [10] = false, [20] = true } }
+    end)
+
+    native(world.side)
+    equal(next(world.queries), nil)
+end)
+
+test('dead mouseover cannot color when no attackable target exists', function()
+    local world = setup(function(w)
+        w.exists = false
+        w.mouseover = { exists = true, attackable = true, dead = true,
+            ranges = { [10] = false, [20] = true } }
+    end)
+
+    native(world.side)
+    equal(next(world.queries), nil)
+end)
+
+test('restricted mouseover attackability safely falls back to attackable target', function()
+    local world = setup(function(w)
+        w.mouseover = { exists = true, attackable = w.secret, dead = false, ranges = {} }
+    end)
+
+    tinted(world.side)
+end)
+
+test('spellbook and spell-ID fallback both check the mouseover unit', function()
+    local calls = 0
+    local world = setup(function(w)
+        w.exists = false
+        w.mouseover = { exists = true, attackable = true, dead = false,
+            ranges = { [10] = false, [20] = true, [40] = false } }
+        w.env.C_SpellBook.IsSpellBookItemInRange = function(slot, bank, unit)
+            equal(unit, 'mouseover')
+            calls = calls + 1
+            return nil
+        end
+    end)
+
+    tinted(world.side)
+    assert(calls > 0)
+    world.env.SlashCmdList.HUNTERASSISTFOREVER('')
+    assert(table.concat(world.messages, '\n'):find('Checking: mouseover', 1, true))
+end)
+
+test('friendly selected target blocks mouseover fallback', function()
+    local world = setup(function(w)
+        w.attackable = false
+        w.mouseover = { exists = true, attackable = true, dead = false,
+            ranges = { [10] = false, [20] = true } }
+    end)
+
+    native(world.side)
+    equal(next(world.queries), nil)
+end)
+
+test('dead selected target blocks mouseover fallback', function()
+    local world = setup(function(w)
+        w.dead = true
+        w.mouseover = { exists = true, attackable = true, dead = false,
+            ranges = { [10] = false, [20] = true } }
+    end)
+
+    native(world.side)
+    equal(next(world.queries), nil)
+end)
+
+test('selecting then clearing a target switches evidence immediately', function()
+    local world = setup(function(w)
+        w.exists = false
+        w.ranges[10] = true
+        w.mouseover = { exists = true, attackable = true, dead = false,
+            ranges = { [10] = false, [20] = true, [40] = false } }
+    end)
+    tinted(world.side)
+    world.exists = true
+
+    world:fire('PLAYER_TARGET_CHANGED')
+
+    native(world.side)
+    world.exists = false
+    world:fire('PLAYER_TARGET_CHANGED')
+    tinted(world.side)
+end)
+
 print(string.format('\n%d passed, %d failed', passed, failed))
 os.exit(failed == 0 and 0 or 1)
