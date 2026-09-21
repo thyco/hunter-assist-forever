@@ -6,14 +6,14 @@ local function setting(key, label)
     local default = addon.Config.GetDefault(key)
     -- Numeric cutoffs reset together, since intermediate defaults may violate
     -- their ordering. Only independent booleans use native proxy settings.
-    if type(default) == "number" then
+    if type(default) == "number" and key ~= "reactiveBar" and key ~= "reactiveButton" then
         return {
             GetValue = function() return addon.Config.Get(key) end,
             SetValue = function(_, value) addon.Config.Set(key, value) end,
         }
     end
 
-    local valueType = Settings.VarType.Boolean
+    local valueType = type(default) == "boolean" and Settings.VarType.Boolean or Settings.VarType.Number
     return Settings.RegisterProxySetting(panel.category, "HunterAssistForever_" .. key, valueType,
         label, default, function()
             return addon.Config.Get(key)
@@ -50,7 +50,7 @@ function panel:Initialize()
     scroll:SetPoint("TOPLEFT", canvas, "TOPLEFT", 0, -8)
     scroll:SetPoint("BOTTOMRIGHT", canvas, "BOTTOMRIGHT", -28, 8)
     local content = CreateFrame("Frame", nil, scroll)
-    content:SetSize(580, 580)
+    content:SetSize(580, 804)
     scroll:SetScrollChild(content)
     scroll:SetScript("OnSizeChanged", function(_, width)
         content:SetWidth(math.max(1, width))
@@ -59,7 +59,26 @@ function panel:Initialize()
     widgets.Text(content, "Hunter Assist Forever", 8, -8, "GameFontNormalLarge")
     local range = widgets.Section(content, "Range checks", "Ranged abilities on all default action bars", -48, 112)
     local ammo = widgets.Section(content, "Ammo check", "Equipped ammunition · local low-ammo warning", -176, 380)
-    self.sections = { range, ammo }
+    local reactive = widgets.Section(content, "Mongoose Bite / Counterattack",
+        "Combat only · either learned spell usable and off cooldown", -572, 210)
+    self.sections = { range, ammo, reactive }
+
+    checkbox(reactive, "reactiveGlowEnabled", "Enable reactive ability glow", -62,
+        "Use Blizzard's native glow when Mongoose Bite or Counterattack is usable and off its own cooldown.")
+    local bars = { { value = 0, label = "Not selected" } }
+    for index, label in ipairs(addon.Buttons.Bars()) do
+        bars[#bars + 1] = { value = index, label = label }
+    end
+    local buttons = {}
+    for index = 1, 12 do
+        buttons[#buttons + 1] = { value = index, label = "Button " .. index }
+    end
+    self.controls.reactiveBar = widgets.Dropdown(reactive, "Action bar", -100,
+        setting("reactiveBar", "Reactive ability action bar"), bars,
+        "Choose a default action bar. No glow appears until a bar is selected.")
+    self.controls.reactiveButton = widgets.Dropdown(reactive, "Button", -136,
+        setting("reactiveButton", "Reactive ability button"), buttons,
+        "Uses a fixed button position, including when the bar changes pages. Choose the button containing your spell or macro.")
 
     checkbox(range, "deadzoneSaturation", "Deadzone saturation", -62,
         "Tint ranged ability icons when your living attackable target is confirmed too close. With no target selected, checks your mouseover.")

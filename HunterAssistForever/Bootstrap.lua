@@ -93,6 +93,10 @@ SlashCmdList.HUNTERASSISTFOREVER = function(message)
             print(line)
         end
     end
+    print("Reactive glow: " .. (addon.Config.Get("reactiveGlowEnabled") and "enabled" or "disabled")
+        .. " | bar " .. addon.Config.Get("reactiveBar") .. ", button " .. addon.Config.Get("reactiveButton")
+        .. " | learned spells: " .. #addon.ReactiveSpells.ids
+        .. " | ready: " .. tostring(addon.ReactiveGlow.ready == true))
     local ammo = addon.Ammo
     print("Ammo: " .. (ammo.sample and tostring(ammo.sample.count) or "unavailable")
         .. " | " .. (ammo.status or "not checked"))

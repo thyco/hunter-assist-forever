@@ -190,11 +190,12 @@ end)
 test('unchanged range polls do not rewrite icon textures', function()
     local world = setup()
     local writes = world.side.icon.writes
+    local bookReads = world.bookReads
 
     for _ = 1, 20 do world:tick(0.1) end
 
     equal(world.side.icon.writes, writes)
-    equal(world.bookReads, 1, 'spellbook is not rescanned by polling')
+    equal(world.bookReads, bookReads, 'spellbook is not rescanned by polling')
 end)
 
 test('updates are throttled rather than running on every frame', function()

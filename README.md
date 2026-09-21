@@ -1,10 +1,10 @@
 # Hunter Assist Forever
 
-A hunter-only addon for WoW Forever that colors ranged ability icons **desaturated red when your target (or mouseover with no target selected) is confirmed too close**. Version 0.2.1 supports all eight default Blizzard action bars, including side bars and main-bar paging. It does not add a glow or change melee ability icons.
+A hunter-only addon for WoW Forever that colors ranged ability icons **desaturated red when your target (or mouseover with no target selected) is confirmed too close**. Version 0.3.0 supports all eight default Blizzard action bars, including side bars and main-bar paging. Deadzone tint does not change melee ability icons. A separate optional reactive-ability glow and an equipped ammo indicator are also included.
 
 ## Install
 
-1. Extract `dist/HunterAssistForever-0.2.1.zip` into your client's `Interface/AddOns` directory, or copy the repository's `HunterAssistForever` folder there.
+1. Extract `dist/HunterAssistForever-0.3.0.zip` into your client's `Interface/AddOns` directory, or copy the repository's `HunterAssistForever` folder there.
 2. Confirm the resulting path is `Interface/AddOns/HunterAssistForever/HunterAssistForever.toc` with no extra nested directory.
 3. Enable **Hunter Assist Forever** in the character-selection AddOns menu and log in as a hunter. Restart the client if a newly installed addon does not appear.
 
@@ -39,6 +39,14 @@ Warnings appear only on your own screen, once per low-ammo episode. Resupplying 
 Keep the cutoffs ordered: **hide > yellow > red > warning**. Press Enter or leave a field to save it. When increasing all cutoffs, start at the top; when decreasing them, start at the bottom. Select **Move icon**, drag the preview, then close settings to finish. The initial position is below the center of the screen, and its position is saved account-wide.
 
 Ammo checks respond to inventory, equipment and world events, with no additional polling loop. They work independently of the deadzone checkbox and only run for hunters.
+
+## Mongoose Bite / Counterattack glow
+
+Select a default **Action bar** and **Button** under **Mongoose Bite / Counterattack** in `/haf config`. The feature is enabled by default, but no button is selected initially. Both spells share the selected button, like Holy Strike/Judgement in Paladin Assist Forever. The selection follows a physical button position even when a bar changes pages; choose the position containing your spell or macro.
+
+In combat, that button glows when either learned spell is reported usable by `C_Spell.IsSpellUsable` and is off its own cooldown. Mongoose Bite therefore requires the client's dodge opportunity; Counterattack requires its parry opportunity. Counterattack is ignored until learned, and learned ranks are matched by localized spell name. Insufficient resources or unavailable/restricted usability data do not produce a glow. As in the paladin reminder, a global cooldown alone does not hide a ready opportunity. This is a readiness reminder, not a target-range or facing check.
+
+The bundled LibCustomGlow renderer uses Blizzard's native proc artwork/colors. The glow clears when readiness ends, the selected button is hidden, the feature is disabled, or combat ends. Settings changes release the old button immediately. Buttons are prepared outside combat; newly created buttons encountered in combat wait until combat ends. Spell/cooldown events refresh immediately, with a 0.1-second fallback update only while in combat with an enabled selected button.
 
 ## What counts as too close
 
@@ -75,7 +83,7 @@ If the tint appears wrong, keep the same target/mouseover and position and run `
 
 ## Development
 
-This project follows `paladin-assist-forever`'s Lua namespace and module layout. The Config and settings widget patterns are adapted from that project. No glow libraries or other runtime dependencies are needed.
+This project follows `paladin-assist-forever`'s Lua namespace and module layout. The Config and settings widget patterns are adapted from that project. LibStub and LibCustomGlow are bundled from the paladin addon; no separate library installation is needed.
 
 | Module | Responsibility |
 | --- | --- |
@@ -99,12 +107,17 @@ Run from the repository root with Lua 5.4 and Python 3.9+ installed:
 lua tests/run.lua
 lua tests/integration.lua
 lua tests/ammo.lua
+lua tests/reactive.lua
+lua tests/glow_integration.lua
 python3 scripts/package.py
 ```
 
 The production addon uses WoW-compatible Lua syntax. Tests load the actual modules and manifest against WoW API/frame doubles, including native texture updates. They verify range decisions, unknown/restricted evidence, caching, all bars, paging, macros, combat transitions, appearance restoration, saved settings, checkbox behavior, class gating and polling. They do not simulate Blizzard's secure execution environment or render the actual settings panel.
 
 ## In-game acceptance
+
+- Select the Mongoose Bite/macro button in the new section. In combat, confirm it glows after a dodge when the ability is off cooldown and usable. Cast it or let the opportunity expire: the glow should stop. Check insufficient mana and a real cooldown do not glow.
+- Check changing the selected button, disabling the feature and leaving combat clear the old glow. Counterattack requires separate in-game validation once learned.
 
 - Check the ammo icon against the equipped ammo slot with several stacks in your quiver. Equip a different ammo type and verify the icon/count follows it.
 - Enable **Show count**, change each cutoff and verify colors at the boundaries. Turn the count off again and test **Move icon**.

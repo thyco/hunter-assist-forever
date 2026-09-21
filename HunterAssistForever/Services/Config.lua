@@ -9,6 +9,9 @@ local defaults = {
     ammoYellowAt = 600,
     ammoRedAt = 400,
     ammoWarnBelow = 200,
+    reactiveGlowEnabled = true,
+    reactiveBar = 0,
+    reactiveButton = 1,
     ammoX = 0,
     ammoY = -180,
 }
@@ -22,6 +25,11 @@ local function valid(key, value)
     if type(value) == "number" then
         if value ~= value or value == math.huge or value == -math.huge then
             return false
+        end
+        if key == "reactiveBar" then
+            return value >= 0 and value <= 8 and value == math.floor(value)
+        elseif key == "reactiveButton" then
+            return value >= 1 and value <= 12 and value == math.floor(value)
         end
         if key == "ammoX" or key == "ammoY" then
             return value >= -10000 and value <= 10000

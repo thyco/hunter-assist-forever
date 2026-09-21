@@ -132,6 +132,8 @@ function Helpers.new()
         function value:StartMoving() self.moving = true end
         function value:StopMovingOrSizing() self.moving = false end
         function value:GetCenter() return self.centerX or 500, self.centerY or 500 end
+        function value:GetFrameLevel() return self.level or 1 end
+        function value:SetFrameLevel(level) self.level = level end
         function value:SetFrameStrata(strata) self.strata = strata end
         function value:SetAutoFocus(value) self.autoFocus = value end
         function value:SetNumeric(value) self.numeric = value end
@@ -154,6 +156,26 @@ function Helpers.new()
 
     env.UIParent = frame('Frame')
     env.CreateFrame = frame
+    -- Boundary double for the renderer; glow_integration loads the real library.
+    world.glowActive = {}
+    local glow = {
+        ProcGlow_Start = function(target, options)
+            world.glowActive[target] = true
+            world.glowOptions = options
+        end,
+        ProcGlow_Stop = function(target) world.glowActive[target] = false end,
+    }
+    env.LibStub = setmetatable({ minor = 999, NewLibrary = function() return nil end }, {
+        __call = function(_, name)
+            assert(name == 'LibCustomGlow-1.0')
+            return glow
+        end,
+    })
+    env.UIDropDownMenu_SetWidth = function(dropdown, width) dropdown.width = width end
+    env.UIDropDownMenu_Initialize = function(dropdown, callback) dropdown.initialize = callback end
+    env.UIDropDownMenu_SetText = function(dropdown, text) dropdown.text = text end
+    env.UIDropDownMenu_CreateInfo = function() return {} end
+    env.UIDropDownMenu_AddButton = function(info) world.lastMenuOption = info end
     env.Settings = {
         VarType = { Boolean = 'boolean', Number = 'number' },
         RegisterCanvasLayoutCategory = function(canvas, name)

@@ -1,10 +1,14 @@
 ## Interface: 16001
 ## Title: Hunter Assist Forever
 ## IconTexture: Interface\AddOns\HunterAssistForever\Media\Hunter.tga
-## Notes: Desaturates ranged ability icons red when an attackable mouseover or target is confirmed too close.
+## Notes: Hunter deadzone tint, equipped ammo indicator, and reactive Mongoose Bite / Counterattack glow.
 ## Author: Hunter Assist Forever
-## Version: 0.2.1
+## Version: 0.3.0
+## OptionalDeps: LibCustomGlow-1.0
 ## SavedVariables: HunterAssistForeverDB
+
+Libs/LibStub/LibStub.lua
+Libs/LibCustomGlow-1.0/LibCustomGlow-1.0.lua
 
 Core.lua
 Services/Config.lua
@@ -13,6 +17,9 @@ Services/Range.lua
 Services/Buttons.lua
 Services/IconTint.lua
 Features/Deadzone.lua
+Services/Glow.lua
+Services/ReactiveSpells.lua
+Features/ReactiveGlow.lua
 Services/AmmoInventory.lua
 Services/AmmoIcon.lua
 Features/Ammo.lua

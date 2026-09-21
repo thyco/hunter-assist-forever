@@ -33,6 +33,15 @@ def main():
                 raise SystemExit(f"Asset is outside the addon directory: {asset}")
             files.append(source)
 
+    # Ship the bundled library's attribution and license files as well as Lua.
+    for asset in sorted((ADDON / "Libs").rglob("*")):
+        if asset.is_file():
+            source = asset.resolve()
+            if not source.is_relative_to(ADDON):
+                raise SystemExit(f"Library asset is outside the addon directory: {asset}")
+            if source not in files:
+                files.append(source)
+
     destination = ROOT / "dist" / f"HunterAssistForever-{version[1]}.zip"
     destination.parent.mkdir(exist_ok=True)
     with zipfile.ZipFile(destination, "w", zipfile.ZIP_DEFLATED) as archive:

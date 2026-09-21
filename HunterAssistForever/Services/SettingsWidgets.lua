@@ -97,3 +97,50 @@ function Widgets.Number(parent, label, y, setting, validate, feedback)
 
     return edit
 end
+
+local dropdownSerial = 0
+
+function Widgets.Dropdown(parent, label, y, setting, options, tooltip)
+    Widgets.Text(parent, label, 20, y - 7, "GameFontHighlight")
+    dropdownSerial = dropdownSerial + 1
+    local dropdown = CreateFrame("Frame", "HunterAssistForeverDropdown" .. dropdownSerial,
+        parent, "UIDropDownMenuTemplate")
+    dropdown:SetPoint("TOPLEFT", parent, "TOPLEFT", 250, y)
+    UIDropDownMenu_SetWidth(dropdown, 210)
+    dropdown.options = options
+    UIDropDownMenu_Initialize(dropdown, function()
+        for _, option in ipairs(options) do
+            local value, text = option.value, option.label
+            local info = UIDropDownMenu_CreateInfo()
+            info.text = text
+            info.value = value
+            info.checked = setting:GetValue() == value
+            info.tooltipTitle = label
+            info.tooltipText = tooltip
+            info.tooltipOnButton = true
+            info.func = function()
+                setting:SetValue(value)
+            end
+            UIDropDownMenu_AddButton(info)
+        end
+    end)
+
+    dropdown.refresh = function()
+        local value = setting:GetValue()
+        -- SetSelectedValue also refreshes the globally shared popup, which
+        -- may contain another dropdown's options (e.g. seconds instead of bars).
+        -- Store this frame's selection without touching that popup; its own
+        -- initializer rebuilds checkmarks whenever the menu is opened.
+        dropdown.selectedName = nil
+        dropdown.selectedID = nil
+        dropdown.selectedValue = value
+
+        for _, option in ipairs(options) do
+            if option.value == value then
+                UIDropDownMenu_SetText(dropdown, option.label)
+                break
+            end
+        end
+    end
+    return dropdown
+end
