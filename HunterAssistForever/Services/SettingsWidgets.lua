@@ -59,3 +59,41 @@ function Widgets.Checkbox(parent, label, y, setting, tooltip)
     return check
 end
 
+function Widgets.Number(parent, label, y, setting, validate, feedback)
+    Widgets.Text(parent, label, 20, y - 7, "GameFontHighlight")
+    local edit = CreateFrame("EditBox", nil, parent, "InputBoxTemplate")
+    edit:SetPoint("TOPLEFT", parent, "TOPLEFT", 280, y)
+    edit:SetSize(110, 28)
+    edit:SetAutoFocus(false)
+    edit:SetNumeric(true)
+    edit:SetMaxLetters(6)
+    edit.refresh = function()
+        edit:SetText(tostring(setting:GetValue()))
+    end
+
+    local function commit(self)
+        local value = tonumber(self:GetText())
+        if value == setting:GetValue() then
+            return
+        end
+
+        if validate(value) then
+            setting:SetValue(value)
+            feedback:SetText("")
+        else
+            feedback:SetText("Keep: hide > yellow > red > warning. Use positive whole numbers.")
+        end
+        self.refresh()
+    end
+    edit:SetScript("OnEnterPressed", function(self)
+        commit(self)
+        self:ClearFocus()
+    end)
+    edit:SetScript("OnEditFocusLost", commit)
+    edit:SetScript("OnEscapePressed", function(self)
+        self.refresh()
+        self:ClearFocus()
+    end)
+
+    return edit
+end

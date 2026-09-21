@@ -112,13 +112,32 @@ function Helpers.new()
         function value:SetFontObject(font) self.font = font end
         function value:SetChecked(checked) self.checked = checked end
         function value:GetChecked() return self.checked end
-        function value:Hide() self.shown = false end
+        function value:Hide() self.shown = false; if self.scripts.OnHide then self.scripts.OnHide(self) end end
+        function value:SetShown(shown) if shown then self:Show() else self:Hide() end end
         function value:Show() self.shown = true; if self.scripts.OnShow then self.scripts.OnShow(self) end end
         function value:IsVisible() return self.shown end
         function value:SetScript(event, callback) self.scripts[event] = callback end
         function value:RegisterEvent(event) self.events[event] = true end
         function value:UnregisterAllEvents() self.events = {} end
         function value:CreateFontString() return frame('FontString', nil, self) end
+        function value:CreateTexture() return frame('Texture', nil, self) end
+        function value:SetTexture(texture) self.texture = texture end
+        function value:SetAllPoints() end
+        function value:SetScrollChild(child) self.scrollChild = child end
+        function value:ClearAllPoints() self.point = nil end
+        function value:SetMovable(movable) self.movable = movable end
+        function value:SetClampedToScreen(clamped) self.clamped = clamped end
+        function value:EnableMouse(enabled) self.mouseEnabled = enabled end
+        function value:RegisterForDrag(...) self.dragButtons = { ... } end
+        function value:StartMoving() self.moving = true end
+        function value:StopMovingOrSizing() self.moving = false end
+        function value:GetCenter() return self.centerX or 500, self.centerY or 500 end
+        function value:SetFrameStrata(strata) self.strata = strata end
+        function value:SetAutoFocus(value) self.autoFocus = value end
+        function value:SetNumeric(value) self.numeric = value end
+        function value:SetMaxLetters(value) self.maxLetters = value end
+        function value:GetText() return self.text end
+        function value:ClearFocus() self.focused = false end
         function value:SetVertexColor(r, g, b, a) self.color = { r, g, b, a or 1 }; self.writes = self.writes + 1 end
         function value:GetVertexColor() return table.unpack(self.color) end
         function value:SetDesaturated(active) self.desaturation = active and 1 or 0; self.writes = self.writes + 1 end
@@ -133,15 +152,16 @@ function Helpers.new()
         return value
     end
 
+    env.UIParent = frame('Frame')
     env.CreateFrame = frame
     env.Settings = {
-        VarType = { Boolean = 'boolean' },
+        VarType = { Boolean = 'boolean', Number = 'number' },
         RegisterCanvasLayoutCategory = function(canvas, name)
             world.category = { canvas = canvas, name = name, GetID = function() return 123 end }
             return world.category
         end,
         RegisterProxySetting = function(category, variable, valueType, name, default, getter, setter)
-            assert(category == world.category and valueType == 'boolean')
+            assert(category == world.category and (valueType == 'boolean' or valueType == 'number'))
             world.setting = { GetValue = function() return getter() end, SetValue = function(_, value) setter(value) end }
             return world.setting
         end,

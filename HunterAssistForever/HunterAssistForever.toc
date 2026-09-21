@@ -3,7 +3,7 @@
 ## IconTexture: Interface\AddOns\HunterAssistForever\Media\Hunter.tga
 ## Notes: Desaturates ranged ability icons red when an attackable mouseover or target is confirmed too close.
 ## Author: Hunter Assist Forever
-## Version: 0.1.2
+## Version: 0.2.0
 ## SavedVariables: HunterAssistForeverDB
 
 Core.lua
@@ -13,6 +13,9 @@ Services/Range.lua
 Services/Buttons.lua
 Services/IconTint.lua
 Features/Deadzone.lua
+Services/AmmoInventory.lua
+Services/AmmoIcon.lua
+Features/Ammo.lua
 Services/SettingsWidgets.lua
 SettingsPanel.lua
 Bootstrap.lua

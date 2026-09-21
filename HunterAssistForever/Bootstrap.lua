@@ -88,10 +88,13 @@ SlashCmdList.HUNTERASSISTFOREVER = function(message)
         .. " | /haf config to configure")
     print("Close-range probes: " .. #addon.Range.probes .. " | default buttons: " .. #addon.Deadzone.buttons
         .. " | confirmed too-close buttons: " .. addon.Deadzone.colored)
-    if addon.running then
+    if addon.Config.Get("deadzoneSaturation") then
         for _, line in ipairs(addon.Range:DescribeChecks()) do
             print(line)
         end
     end
+    local ammo = addon.Ammo
+    print("Ammo: " .. (ammo.sample and tostring(ammo.sample.count) or "unavailable")
+        .. " | " .. (ammo.status or "not checked"))
     print("Only confirmed proximity is colored. Missing or restricted range evidence leaves icons unchanged.")
 end

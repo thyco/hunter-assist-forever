@@ -1,10 +1,10 @@
 # Hunter Assist Forever
 
-A hunter-only addon for WoW Forever that colors ranged ability icons **desaturated red when your target (or mouseover with no target selected) is confirmed too close**. Version 0.1.2 supports all eight default Blizzard action bars, including side bars and main-bar paging. It does not add a glow or change melee ability icons.
+A hunter-only addon for WoW Forever that colors ranged ability icons **desaturated red when your target (or mouseover with no target selected) is confirmed too close**. Version 0.2.0 supports all eight default Blizzard action bars, including side bars and main-bar paging. It does not add a glow or change melee ability icons.
 
 ## Install
 
-1. Extract `dist/HunterAssistForever-0.1.2.zip` into your client's `Interface/AddOns` directory, or copy the repository's `HunterAssistForever` folder there.
+1. Extract `dist/HunterAssistForever-0.2.0.zip` into your client's `Interface/AddOns` directory, or copy the repository's `HunterAssistForever` folder there.
 2. Confirm the resulting path is `Interface/AddOns/HunterAssistForever/HunterAssistForever.toc` with no extra nested directory.
 3. Enable **Hunter Assist Forever** in the character-selection AddOns menu and log in as a hunter. Restart the client if a newly installed addon does not appear.
 
@@ -19,6 +19,26 @@ Open **Settings → AddOns → Hunter Assist Forever**, or type `/haf config`.
 The bordered **Range checks** group contains one checkbox: **Deadzone saturation**. It is enabled by default. Changes apply immediately and are saved account-wide across reloads and logouts. Turning it off restores Blizzard's current icon colors and desaturation and stops range polling. Settings remain accessible on other classes, but range processing only runs on hunters.
 
 No bar or button selection is needed. Direct spell buttons and macros whose displayed spell the client exposes are checked automatically. For macros, the tint describes the **displayed spell against the selected range-check unit**; it does not interpret macro target conditions, focus, or an entire cast sequence. Items, pet abilities, flyouts, custom bars and unidentified macro actions are not colored.
+
+## Ammo check
+
+The **Ammo check** settings group enables a movable ammo icon. **Show count** is disabled by default. All four cutoffs are configurable; the defaults are:
+
+| Equipped ammo count | Display |
+| --- | --- |
+| Above 800 | Hidden |
+| 601–800 | Green |
+| 401–600 | Yellow |
+| 200–400 | Red |
+| Below 200 | Red plus a local low-ammo warning |
+
+The addon reads `GetInventoryItemCount("player", ammoSlot)`, the same count used by the character panel's equipped ammo slot. It does not independently sum other ammunition in bags. An empty equipped slot counts as zero. Unavailable or restricted data hides the indicator and does not trigger a warning; a later inventory update or combat ending retries the read.
+
+Warnings appear only on your own screen, once per low-ammo episode. Resupplying to the warning threshold or above rearms the warning; entering the world after a loading screen also rearms it. No raid chat messages are sent.
+
+Keep the cutoffs ordered: **hide > yellow > red > warning**. Press Enter or leave a field to save it. When increasing all cutoffs, start at the top; when decreasing them, start at the bottom. Select **Move icon**, drag the preview, then close settings to finish. The initial position is below the center of the screen, and its position is saved account-wide.
+
+Ammo checks respond to inventory, equipment and world events, with no additional polling loop. They work independently of the deadzone checkbox and only run for hunters.
 
 ## What counts as too close
 
@@ -60,10 +80,13 @@ This project follows `paladin-assist-forever`'s Lua namespace and module layout.
 | `Services/Range.lua` | Learned spell catalog, per-refresh cache and proximity evidence. |
 | `Services/Buttons.lua` | All eight default Blizzard button groups. |
 | `Services/IconTint.lua` | Secure texture hooks, tinting and native appearance restoration. |
-| `Services/Config.lua` | Validated account-wide boolean settings and change listeners. |
-| `Services/SettingsWidgets.lua` | Reusable bordered section and checkbox helpers. |
+| `Services/Config.lua` | Validated account-wide settings and change listeners. |
+| `Services/SettingsWidgets.lua` | Reusable bordered section, checkbox and numeric field helpers. |
+| `Services/AmmoInventory.lua` | Reads the equipped ammo slot defensively. |
+| `Services/AmmoIcon.lua` | Movable colored icon and optional count. |
+| `Features/Ammo.lua` | Event-driven ammo thresholds and local warning lifecycle. |
 | `Features/Deadzone.lua` | Applies confirmed proximity to visible ranged buttons. |
-| `SettingsPanel.lua` | Native AddOns category with the single checkbox. |
+| `SettingsPanel.lua` | Native AddOns category for range and ammo settings. |
 | `Bootstrap.lua` | Events, throttled updates and `/haf` commands. |
 
 Run from the repository root with Lua 5.4 and Python 3.9+ installed:
@@ -71,12 +94,18 @@ Run from the repository root with Lua 5.4 and Python 3.9+ installed:
 ```sh
 lua tests/run.lua
 lua tests/integration.lua
+lua tests/ammo.lua
 python3 scripts/package.py
 ```
 
 The production addon uses WoW-compatible Lua syntax. Tests load the actual modules and manifest against WoW API/frame doubles, including native texture updates. They verify range decisions, unknown/restricted evidence, caching, all bars, paging, macros, combat transitions, appearance restoration, saved settings, checkbox behavior, class gating and polling. They do not simulate Blizzard's secure execution environment or render the actual settings panel.
 
 ## In-game acceptance
+
+- Check the ammo icon against the equipped ammo slot with several stacks in your quiver. Equip a different ammo type and verify the icon/count follows it.
+- Enable **Show count**, change each cutoff and verify colors at the boundaries. Turn the count off again and test **Move icon**.
+- Drop below the warning threshold; expect one warning, including during combat if the API permits reading. Further shots should not repeat it. Resupply and cross below again, then test a loading screen while low.
+- Unequip ammo and confirm a red zero-ammo state. Check that switching to equipment that does not need ammo hides the indicator.
 
 - Enable Lua errors with `/console scriptErrors 1`, then `/reload`.
 - Open `/haf config`; confirm one **Range checks** box with **Deadzone saturation** checked.
@@ -97,3 +126,5 @@ The implementation was checked against the Forever branch of the Blizzard UI sou
 - [Spell range and metadata APIs](https://github.com/Gethe/wow-ui-source/blob/forever/Interface/AddOns/Blizzard_APIDocumentationGenerated/SpellDocumentation.lua)
 - [Player spellbook APIs](https://github.com/Gethe/wow-ui-source/blob/forever/Interface/AddOns/Blizzard_APIDocumentationGenerated/SpellBookDocumentation.lua)
 - [Default button native coloring and macro spell handling](https://github.com/Gethe/wow-ui-source/blob/forever/Interface/AddOns/Blizzard_ActionBar/Shared/ActionButton.lua)
+
+- [Forever character panel equipped ammo count](https://github.com/Gethe/wow-ui-source/blob/forever/Interface/AddOns/Blizzard_UIPanels_Game/Camelot/PaperDollFrame.lua)

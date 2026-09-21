@@ -23,3 +23,9 @@ Keep the learned spellbook slot and bank alongside each spell ID. Prefer the rea
 ## Target and mouseover selection (0.1.2)
 
 A selected target takes priority and must be living and attackable. Only when UnitExists("target") explicitly returns false may a living attackable mouseover be selected. A friendly, dead or unreadable selected target does not fall back to mouseover. Both API checks and all proximity evidence use the same chosen unit for the entire refresh. Target and mouseover events refresh immediately; 0.1-second polling handles mouseover departure. Diagnostics identifies the chosen unit. The single existing checkbox controls both paths.
+
+## Ammo indicator (0.2.0)
+
+Add a separate Ammo check settings group with enable checkbox (default true), Show count (default false), and ordered positive integer cutoffs (800/600/400/200). Use the equipped ammo slot texture and count, following the native character panel. Empty slot is zero; unreadable data is unknown and produces no warning. Display green/yellow/red according to thresholds, hidden above the highest cutoff. An ordinary movable frame shows the ammo texture and optional count; position is saved account-wide through a settings preview.
+
+Inventory/equipment events refresh ammunition without range polling. Warn locally once below the lowest cutoff; rearm after resupply or world entry. Suppress checks while leaving/loading the world. Keep the range and ammo feature lifecycles independent, with hunter gating shared by Core. Tests cover thresholds, warnings, loading, restricted values, settings validation and dragging. Real-client acceptance remains necessary.
