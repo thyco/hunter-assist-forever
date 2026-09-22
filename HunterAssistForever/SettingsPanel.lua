@@ -50,18 +50,17 @@ function panel:Initialize()
     scroll:SetPoint("TOPLEFT", canvas, "TOPLEFT", 0, -8)
     scroll:SetPoint("BOTTOMRIGHT", canvas, "BOTTOMRIGHT", -28, 8)
     local content = CreateFrame("Frame", nil, scroll)
-    content:SetSize(580, 804)
+    content:SetSize(580, 676)
     scroll:SetScrollChild(content)
     scroll:SetScript("OnSizeChanged", function(_, width)
         content:SetWidth(math.max(1, width))
     end)
 
     widgets.Text(content, "Hunter Assist Forever", 8, -8, "GameFontNormalLarge")
-    local range = widgets.Section(content, "Range checks", "Ranged abilities on all default action bars", -48, 112)
-    local ammo = widgets.Section(content, "Ammo check", "Equipped ammunition · local low-ammo warning", -176, 380)
+    local ammo = widgets.Section(content, "Ammo check", "Equipped ammunition · local low-ammo warning", -48, 380)
     local reactive = widgets.Section(content, "Mongoose Bite / Counterattack",
-        "Combat only · either learned spell usable and off cooldown", -572, 210)
-    self.sections = { range, ammo, reactive }
+        "Combat only · either learned spell usable and off cooldown", -444, 210)
+    self.sections = { ammo, reactive }
 
     checkbox(reactive, "reactiveGlowEnabled", "Enable reactive ability glow", -62,
         "Use Blizzard's native glow when Mongoose Bite or Counterattack is usable and off its own cooldown.")
@@ -80,8 +79,6 @@ function panel:Initialize()
         setting("reactiveButton", "Reactive ability button"), buttons,
         "Uses a fixed button position, including when the bar changes pages. Choose the button containing your spell or macro.")
 
-    checkbox(range, "deadzoneSaturation", "Deadzone saturation", -62,
-        "Tint ranged ability icons when your living attackable target is confirmed too close. With no target selected, checks your mouseover.")
     checkbox(ammo, "ammoCheckEnabled", "Enable ammo check", -62,
         "Show equipped ammo status and warn below the configured threshold. Applies to hunters only.")
     checkbox(ammo, "ammoShowCount", "Show count", -96,

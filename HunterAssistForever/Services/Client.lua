@@ -22,44 +22,6 @@ function Client.Boolean(value)
     end
 end
 
-function Client.CanAttack(unit)
-    return Client.Boolean(UnitExists(unit)) == true
-        and Client.Boolean(UnitCanAttack("player", unit)) == true
-        and Client.Boolean(UnitIsDeadOrGhost(unit)) == false
-end
-
-function Client.RangeUnit()
-    local hasTarget = Client.Boolean(UnitExists("target"))
-    if hasTarget == true then
-        if Client.CanAttack("target") then
-            return "target"
-        end
-    elseif hasTarget == false and Client.CanAttack("mouseover") then
-        return "mouseover"
-    end
-end
-
-function Client.SpellInfo(id)
-    if not Client.Number(id) or not C_Spell or not C_Spell.GetSpellInfo
-        or not C_Spell.IsSpellHarmful then
-        return nil
-    end
-
-    local info = C_Spell.GetSpellInfo(id)
-    if not info or not Client.Number(info.minRange) or not Client.Number(info.maxRange)
-        or info.minRange < 0 or info.maxRange <= info.minRange
-        or Client.Boolean(C_Spell.IsSpellHarmful(id)) ~= true then
-        return nil
-    end
-
-    local name = "spell " .. id
-    if Client.Readable(info.name) and type(info.name) == "string" then
-        name = info.name:gsub("|", "||"):gsub("[\r\n]", " ")
-    end
-
-    return { id = id, name = name, minRange = info.minRange, maxRange = info.maxRange }
-end
-
 function Client.PlayerSpells()
     local spells = {}
     if not C_SpellBook or not C_SpellBook.GetNumSpellBookSkillLines
@@ -89,62 +51,4 @@ function Client.PlayerSpells()
     end
 
     return spells
-end
-
-local function rangeCheck(api, ...)
-    if type(api) ~= "function" then
-        return nil, "missing API"
-    end
-
-    local ok, value = pcall(api, ...)
-    if not ok then
-        return nil, "error"
-    elseif not Client.Readable(value) then
-        return nil, "restricted"
-    end
-
-    local result = Client.Boolean(value)
-    if result == nil then
-        return nil, "unavailable"
-    end
-
-    return result, result and "in range" or "out of range"
-end
-
-function Client.InInteractionRange(unit)
-    return rangeCheck(CheckInteractDistance, unit, 3)
-end
-
-function Client.InRange(id, slot, bank, unit)
-    local result, bookStatus
-    if Client.Number(slot) and Client.Number(bank) then
-        result, bookStatus = rangeCheck(C_SpellBook and C_SpellBook.IsSpellBookItemInRange,
-            slot, bank, unit)
-    else
-        bookStatus = "no spellbook slot"
-    end
-
-    if result ~= nil then
-        return result, "spellbook", bookStatus, "not checked"
-    end
-
-    local idStatus
-    result, idStatus = rangeCheck(C_Spell and C_Spell.IsSpellInRange, id, unit)
-
-    return result, result ~= nil and "spell ID" or "none", bookStatus, idStatus
-end
-
-function Client.ActionSpell(slot)
-    if not Client.Number(slot) or slot < 1 or slot ~= math.floor(slot) or not GetActionInfo then
-        return nil
-    end
-
-    local kind, id, subtype = GetActionInfo(slot)
-    if not Client.Readable(kind) or not Client.Number(id) or not Client.Readable(subtype) then
-        return nil
-    end
-
-    if kind == "spell" or (kind == "macro" and subtype == "spell") then
-        return id
-    end
 end

@@ -1,9 +1,9 @@
 ## Interface: 16001
 ## Title: Hunter Assist Forever
 ## IconTexture: Interface\AddOns\HunterAssistForever\Media\Hunter.tga
-## Notes: Hunter deadzone tint, equipped ammo indicator, and reactive Mongoose Bite / Counterattack glow.
+## Notes: Equipped ammo indicator and reactive Mongoose Bite / Counterattack glow.
 ## Author: Hunter Assist Forever
-## Version: 0.3.0
+## Version: 0.4.1
 ## OptionalDeps: LibCustomGlow-1.0
 ## SavedVariables: HunterAssistForeverDB
 
@@ -13,10 +13,7 @@ Libs/LibCustomGlow-1.0/LibCustomGlow-1.0.lua
 Core.lua
 Services/Config.lua
 Services/Client.lua
-Services/Range.lua
 Services/Buttons.lua
-Services/IconTint.lua
-Features/Deadzone.lua
 Services/Glow.lua
 Services/ReactiveSpells.lua
 Features/ReactiveGlow.lua

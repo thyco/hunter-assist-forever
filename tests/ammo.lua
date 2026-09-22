@@ -222,9 +222,8 @@ test('missing equipped texture means zero ammo despite empty-slot count of one',
     equal(#world.warnings, 1)
 end)
 
-test('ammo checks use events and do not keep range polling alive', function()
+test('ammo checks use events without polling', function()
     local world, addon = setup(500)
-    addon.Config.Set('deadzoneSaturation', false)
     local reads = world.ammoReads
 
     for _ = 1, 20 do world:tick(0.5) end
@@ -270,6 +269,31 @@ test('non-hunters do not create or query the ammo indicator', function()
     equal(addon.AmmoIcon.frame, nil)
     equal(world.ammoReads, 0)
     equal(#world.warnings, 0)
+end)
+
+test('upgrade keeps ammo and reactive preferences but removes range checks', function()
+    local world, addon = setup(500, function(w)
+        w.env.HunterAssistForeverDB = { deadzoneSaturation = true, reactiveGlowEnabled = true,
+            reactiveBar = 5, reactiveButton = 7, ammoShowCount = true, ammoX = 25, ammoY = -100 }
+    end)
+
+    equal(#addon.features, 2)
+    equal(addon.Range, nil)
+    assert(addon.ReactiveGlow)
+    equal(addon.Config.Get('reactiveBar'), 5)
+    equal(addon.Config.Get('reactiveButton'), 7)
+    equal(addon.Config.Get('ammoShowCount'), true)
+    equal(addon.Config.Get('ammoX'), 25)
+    equal(addon.SettingsPanel.controls.deadzoneSaturation, nil)
+    assert(addon.SettingsPanel.controls.reactiveGlowEnabled)
+    equal(#addon.SettingsPanel.sections, 2)
+    for _, frame in ipairs(world.frames) do
+        equal(frame.scripts.OnUpdate, nil)
+        equal(frame.events.PLAYER_TARGET_CHANGED, nil)
+    end
+
+    world.env.SlashCmdList.HUNTERASSISTFOREVER('')
+    assert(table.concat(world.messages, '\n'):find('Ammo: 500', 1, true))
 end)
 
 print(string.format('\n%d passed, %d failed', passed, failed))

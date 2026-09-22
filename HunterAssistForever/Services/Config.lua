@@ -2,7 +2,6 @@ local _, addon = ...
 local Config = {}
 addon.Config = Config
 local defaults = {
-    deadzoneSaturation = true,
     ammoCheckEnabled = true,
     ammoShowCount = false,
     ammoHideAbove = 800,

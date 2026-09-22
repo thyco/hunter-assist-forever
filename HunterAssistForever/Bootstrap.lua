@@ -1,70 +1,11 @@
 local _, addon = ...
 local frame = CreateFrame("Frame")
-local elapsedSinceUpdate, elapsedSinceDiscovery = 0, 0
-local discoveryDirty, catalogDirty = false, false
-local discoveryEvents = {
-    "ACTIONBAR_SLOT_CHANGED", "ACTIONBAR_PAGE_CHANGED", "UPDATE_BONUS_ACTIONBAR",
-    "UPDATE_OVERRIDE_ACTIONBAR", "UPDATE_VEHICLE_ACTIONBAR", "UPDATE_MACROS",
-    "ACTIONBAR_SHOWGRID", "ACTIONBAR_HIDEGRID",
-}
-
-local function update(_, elapsed)
-    elapsedSinceUpdate = elapsedSinceUpdate + elapsed
-    elapsedSinceDiscovery = elapsedSinceDiscovery + elapsed
-    if elapsedSinceUpdate < 0.1 then
-        return
-    end
-
-    local discover = discoveryDirty or elapsedSinceDiscovery >= 0.5
-    elapsedSinceUpdate = 0
-    if discover then
-        elapsedSinceDiscovery = 0
-    end
-
-    addon:Refresh(discover, catalogDirty)
-    discoveryDirty, catalogDirty = false, false
-end
-
-function addon:SetPolling(enabled)
-    elapsedSinceUpdate, elapsedSinceDiscovery = 0, 0
-    discoveryDirty, catalogDirty = false, false
-    frame:SetScript("OnUpdate", enabled and update or nil)
-end
-
 frame:RegisterEvent("PLAYER_LOGIN")
-frame:SetScript("OnEvent", function(self, event)
-    if event == "PLAYER_LOGIN" then
-        addon.Config.Initialize()
-        addon.SettingsPanel:Initialize()
-        addon:Start()
-        if not addon.started then
-            self:UnregisterAllEvents()
-            return
-        end
-
-        for _, name in ipairs(discoveryEvents) do
-            self:RegisterEvent(name)
-        end
-        self:RegisterEvent("PLAYER_TARGET_CHANGED")
-        self:RegisterEvent("UPDATE_MOUSEOVER_UNIT")
-        self:RegisterEvent("PLAYER_REGEN_ENABLED")
-        self:RegisterEvent("PLAYER_ENTERING_WORLD")
-        self:RegisterEvent("SPELLS_CHANGED")
-        self:RegisterEvent("PLAYER_TALENT_UPDATE")
-        return
-    end
-
-    if event == "PLAYER_TARGET_CHANGED" or event == "UPDATE_MOUSEOVER_UNIT" then
-        addon:Refresh(false, catalogDirty)
-        catalogDirty = false
-    elseif event == "PLAYER_REGEN_ENABLED" or event == "PLAYER_ENTERING_WORLD" then
-        addon:Refresh(true, true)
-        discoveryDirty, catalogDirty = false, false
-    elseif event == "SPELLS_CHANGED" or event == "PLAYER_TALENT_UPDATE" then
-        catalogDirty = true
-    else
-        discoveryDirty = true
-    end
+frame:SetScript("OnEvent", function(self)
+    addon.Config.Initialize()
+    addon.SettingsPanel:Initialize()
+    addon:Start()
+    self:UnregisterAllEvents()
 end)
 
 SLASH_HUNTERASSISTFOREVER1 = "/haf"
@@ -79,26 +20,17 @@ SlashCmdList.HUNTERASSISTFOREVER = function(message)
     print("Hunter Assist Forever " .. addon.version .. " | client " .. version
         .. " (" .. build .. ") | interface " .. interface)
     if not addon.started then
-        print("Hunter range checks are inactive on this character. /haf config to configure.")
+        print("Hunter helpers are inactive on this character. /haf config to configure.")
         return
     end
 
-    addon:Refresh(true, true)
-    print("Deadzone saturation: " .. (addon.Config.Get("deadzoneSaturation") and "enabled" or "disabled")
-        .. " | /haf config to configure")
-    print("Close-range probes: " .. #addon.Range.probes .. " | default buttons: " .. #addon.Deadzone.buttons
-        .. " | confirmed too-close buttons: " .. addon.Deadzone.colored)
-    if addon.Config.Get("deadzoneSaturation") then
-        for _, line in ipairs(addon.Range:DescribeChecks()) do
-            print(line)
-        end
-    end
+    addon.ReactiveGlow:Refresh()
     print("Reactive glow: " .. (addon.Config.Get("reactiveGlowEnabled") and "enabled" or "disabled")
         .. " | bar " .. addon.Config.Get("reactiveBar") .. ", button " .. addon.Config.Get("reactiveButton")
         .. " | learned spells: " .. #addon.ReactiveSpells.ids
         .. " | ready: " .. tostring(addon.ReactiveGlow.ready == true))
-    local ammo = addon.Ammo
-    print("Ammo: " .. (ammo.sample and tostring(ammo.sample.count) or "unavailable")
-        .. " | " .. (ammo.status or "not checked"))
-    print("Only confirmed proximity is colored. Missing or restricted range evidence leaves icons unchanged.")
+    addon.Ammo:Refresh()
+    print("Ammo: " .. (addon.Ammo.sample and tostring(addon.Ammo.sample.count) or "unavailable")
+        .. " | " .. (addon.Ammo.status or "not checked"))
+    print("/haf config to configure ammo and reactive glow settings.")
 end

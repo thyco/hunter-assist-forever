@@ -1,6 +1,6 @@
 local addonName, addon = ...
 addon.name = addonName
-addon.version = "0.3.0"
+addon.version = "0.4.1"
 addon.features = {}
 addon.started = false
 addon.running = false
@@ -33,32 +33,15 @@ function addon:IsFeatureEnabled(feature)
 end
 
 function addon:ApplySettings()
-    local running, polling = false, false
+    local running = false
     for _, feature in ipairs(self.features) do
         if self:IsFeatureEnabled(feature) then
             running = true
-            polling = polling or not feature.eventDriven
-            if feature.ApplySettings then
-                feature:ApplySettings()
-            end
+            feature:ApplySettings()
         else
             feature:Stop()
         end
     end
 
     self.running = running
-    self:SetPolling(polling)
-    self:Refresh(true, true)
-end
-
-function addon:Refresh(discover, rebuild)
-    if not self.started or not self.running then
-        return
-    end
-
-    for _, feature in ipairs(self.features) do
-        if self:IsFeatureEnabled(feature) and not feature.eventDriven then
-            feature:Refresh(discover, rebuild)
-        end
-    end
 end

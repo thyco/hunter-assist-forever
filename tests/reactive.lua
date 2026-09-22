@@ -159,12 +159,11 @@ test('changing selected button clears the previous glow', function()
     equal(glowing(world, world.main), true)
 end)
 
-test('disabling clears glow and allows range polling to stop', function()
+test('disabling clears glow and stops reactive polling', function()
     local world, addon = setup()
     world.usable[1495] = true
     world:fire('SPELL_UPDATE_USABLE')
 
-    addon.Config.Set('deadzoneSaturation', false)
     addon.Config.Set('reactiveGlowEnabled', false)
 
     equal(glowing(world, world.side), false)
