@@ -6,7 +6,7 @@ local function setting(key, label)
     local default = addon.Config.GetDefault(key)
     -- Numeric cutoffs reset together, since intermediate defaults may violate
     -- their ordering. Only independent booleans use native proxy settings.
-    if type(default) == "number" and key ~= "reactiveBar" and key ~= "reactiveButton" then
+    if type(default) == "number" and key ~= "reactiveBar" and key ~= "reactiveButton" and key ~= "petHealthThreshold" then
         return {
             GetValue = function() return addon.Config.Get(key) end,
             SetValue = function(_, value) addon.Config.Set(key, value) end,
@@ -50,7 +50,7 @@ function panel:Initialize()
     scroll:SetPoint("TOPLEFT", canvas, "TOPLEFT", 0, -8)
     scroll:SetPoint("BOTTOMRIGHT", canvas, "BOTTOMRIGHT", -28, 8)
     local content = CreateFrame("Frame", nil, scroll)
-    content:SetSize(580, 676)
+    content:SetSize(580, 970)
     scroll:SetScrollChild(content)
     scroll:SetScript("OnSizeChanged", function(_, width)
         content:SetWidth(math.max(1, width))
@@ -60,7 +60,28 @@ function panel:Initialize()
     local ammo = widgets.Section(content, "Ammo check", "Equipped ammunition · local low-ammo warning", -48, 380)
     local reactive = widgets.Section(content, "Mongoose Bite / Counterattack",
         "Combat only · either learned spell usable and off cooldown", -444, 210)
-    self.sections = { ammo, reactive }
+    local pet = widgets.Section(content, "Pet settings", "Silent red icon when your pet's health is low", -670, 270)
+    self.sections = { ammo, reactive, pet }
+
+    checkbox(pet, "petHealthEnabled", "Enable low pet health icon", -62,
+        "Show a red icon at or below the health threshold. No sound or raid warning.")
+    checkbox(pet, "petShowPercent", "Show health percentage", -96,
+        "Display the pet's current health percentage on the red icon.")
+    local petFeedback = widgets.Text(pet, "", 20, -232)
+    petFeedback:SetTextColor(1, 0.4, 0.3)
+    self.controls.petHealthThreshold = widgets.Number(pet, "Health threshold (%)", -142,
+        setting("petHealthThreshold", "Pet health threshold"), function(value)
+            return addon.Config.CanSet("petHealthThreshold", value)
+        end, petFeedback, "Use a whole percentage between 1 and 100.")
+    local movePet = CreateFrame("Button", nil, pet, "UIPanelButtonTemplate")
+    movePet:SetPoint("TOPLEFT", pet, "TOPLEFT", 20, -190)
+    movePet:SetSize(140, 28)
+    movePet:SetText("Move icon")
+    movePet:SetScript("OnClick", function()
+        addon.PetHealthIcon:SetPreview(true)
+    end)
+    widgets.Tooltip(movePet, "Show a red preview and drag it. Close settings to finish; position is saved.")
+    self.movePetButton = movePet
 
     checkbox(reactive, "reactiveGlowEnabled", "Enable reactive ability glow", -62,
         "Use Blizzard's native glow when Mongoose Bite or Counterattack is usable and off its own cooldown.")
@@ -115,6 +136,7 @@ function panel:Initialize()
     end)
     canvas:SetScript("OnHide", function()
         addon.AmmoIcon:SetPreview(false)
+        addon.PetHealthIcon:SetPreview(false)
     end)
     addon.Config.Subscribe(function()
         self:Refresh()

@@ -11,6 +11,11 @@ local defaults = {
     reactiveGlowEnabled = true,
     reactiveBar = 0,
     reactiveButton = 1,
+    petHealthEnabled = true,
+    petHealthThreshold = 30,
+    petShowPercent = false,
+    petX = 50,
+    petY = -180,
     ammoX = 0,
     ammoY = -180,
 }
@@ -30,7 +35,10 @@ local function valid(key, value)
         elseif key == "reactiveButton" then
             return value >= 1 and value <= 12 and value == math.floor(value)
         end
-        if key == "ammoX" or key == "ammoY" then
+        if key == "petHealthThreshold" then
+            return value >= 1 and value <= 100 and value == math.floor(value)
+        end
+        if key == "ammoX" or key == "ammoY" or key == "petX" or key == "petY" then
             return value >= -10000 and value <= 10000
         end
         return value >= 1 and value <= 999999 and value == math.floor(value)

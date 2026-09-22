@@ -39,3 +39,11 @@ Tame Beast was the useful zero-minimum-range spell on the user's hunter, but it 
 Use the paladin addon's LibCustomGlow proc renderer, native colors and fixed default-bar/button selector. One shared selected button glows in combat if a learned Mongoose Bite or Counterattack is usable and off its own cooldown. Match learned spellbook ranks by localized names from rank-one spell metadata. Ignore GCD-only cooldowns like the paladin feature. Treat restricted/unknown usability and cooldown evidence conservatively. No combat-log dodge/parry timers, casts, bindings or range checks are added to this reminder. The client's usability state is authoritative and needs validation after a dodge/parry in-game.
 
 Feature defaults enabled with no selected bar. Prepare overlay parents outside combat, refresh on spell/usability/cooldown/combat events, and poll at 0.1 seconds only while enabled, in combat and with a selected button. Stop on world exit, disable or combat exit. Bundle library license files. Tests cover readiness, cooldowns, rank/learning changes, selection cleanup, native rendering and existing features.
+
+## Range feature removal (0.4.1)
+
+Remove deadzone range tinting and its settings, range APIs and polling. Retain both the ammo indicator and Mongoose Bite / Counterattack reactive glow, including its bundled library, selected button and saved preferences. The initial ammo-only 0.4.0 build was superseded after the user clarified that the reactive glow should stay.
+
+## Pet health indicator (0.5.0)
+
+Separate Pet settings group, enabled by default with 30% configurable threshold, optional health percentage off by default, and a movable red-only icon. The user found raid warnings too loud, so this feature is a silent visual alert with no warning messages or sounds. Hidden above threshold; shown at or below it. Hide for missing/dead pets and unknown/restricted health. Read UnitHealth/UnitHealthMax only after readability guards and finite positive checks, using current pet unit events and world lifecycle events. Preserve ammo and reactive glow behavior. In-game validation of the health APIs and settings layout remains necessary.

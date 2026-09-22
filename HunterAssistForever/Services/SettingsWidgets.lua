@@ -59,7 +59,7 @@ function Widgets.Checkbox(parent, label, y, setting, tooltip)
     return check
 end
 
-function Widgets.Number(parent, label, y, setting, validate, feedback)
+function Widgets.Number(parent, label, y, setting, validate, feedback, errorText)
     Widgets.Text(parent, label, 20, y - 7, "GameFontHighlight")
     local edit = CreateFrame("EditBox", nil, parent, "InputBoxTemplate")
     edit:SetPoint("TOPLEFT", parent, "TOPLEFT", 280, y)
@@ -81,7 +81,7 @@ function Widgets.Number(parent, label, y, setting, validate, feedback)
             setting:SetValue(value)
             feedback:SetText("")
         else
-            feedback:SetText("Keep: hide > yellow > red > warning. Use positive whole numbers.")
+            feedback:SetText(errorText or "Keep: hide > yellow > red > warning. Use positive whole numbers.")
         end
         self.refresh()
     end
