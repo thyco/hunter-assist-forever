@@ -1,0 +1,193 @@
+local H = dofile('tests/helpers.lua')
+local equal = H.equal
+local passed, failed = 0, 0
+local function test(name, run)
+    local ok, message = pcall(run)
+    if ok then
+        passed = passed + 1
+        print('PASS ' .. name)
+    else
+        failed = failed + 1
+        print('FAIL ' .. name .. ': ' .. tostring(message))
+    end
+end
+
+local function setup(health, configure)
+    local world = H.new()
+    world.petHealth, world.petMax, world.petExists, world.petDead = health, 1000, true, false
+    world.petReads = 0
+    world.env.UnitExists = function(unit) equal(unit, 'pet'); return world.petExists end
+    world.env.UnitIsDeadOrGhost = function(unit) equal(unit, 'pet'); return world.petDead end
+    world.env.UnitHealth = function(unit)
+        equal(unit, 'pet')
+        world.petReads = world.petReads + 1
+        return world.petHealth
+    end
+    world.env.UnitHealthMax = function(unit) equal(unit, 'pet'); return world.petMax end
+    world.env.RaidNotice_AddMessage = function() error('pet alert must be silent') end
+    world.env.PlaySound = function() error('pet alert must be silent') end
+    if configure then configure(world) end
+
+    for line in io.lines('HunterAssistForever/HunterAssistForever.toc') do
+        if line:match('%.lua$') then
+            assert(loadfile('HunterAssistForever/' .. line, 't', world.env))('HunterAssistForever', world.addon)
+        end
+    end
+    world:fire('PLAYER_LOGIN')
+    world:fire('PLAYER_ENTERING_WORLD')
+
+    assert(world.addon.PetHealthIcon, 'pet health feature missing')
+    return world, world.addon
+end
+
+test('healthy pet icon is hidden', function()
+    local _, addon = setup(301)
+
+    equal(addon.PetHealthIcon.frame.shown, false)
+end)
+
+test('exact threshold shows only red without sound or warning', function()
+    local world, addon = setup(300)
+
+    equal(addon.PetHealthIcon.frame.shown, true)
+    equal(addon.PetHealthIcon.texture.color[1], 1)
+    equal(addon.PetHealthIcon.texture.color[2], 0.2)
+    equal(addon.PetHealthIcon.countText.shown, false)
+    equal(#world.messages, 0)
+end)
+
+test('healing above threshold hides the icon', function()
+    local world, addon = setup(200)
+    world.petHealth = 500
+
+    world:fire('UNIT_HEALTH', 'pet')
+
+    equal(addon.PetHealthIcon.frame.shown, false)
+end)
+
+test('max health changes update the threshold calculation', function()
+    local world, addon = setup(400)
+    world.petMax = 2000
+
+    world:fire('UNIT_MAXHEALTH', 'pet')
+
+    equal(addon.PetHealthIcon.frame.shown, true)
+end)
+
+test('missing pet and dead pet hide the icon', function()
+    local world, addon = setup(200)
+    world.petExists = false
+    world:fire('UNIT_PET', 'player')
+    equal(addon.PetHealthIcon.frame.shown, false)
+
+    world.petExists, world.petDead = true, true
+    world:fire('UNIT_FLAGS', 'pet')
+
+    equal(addon.PetHealthIcon.frame.shown, false)
+end)
+
+test('restricted health hides without arithmetic on the value', function()
+    local world, addon = setup(200)
+    world.petHealth = world.secret
+
+    world:fire('UNIT_HEALTH', 'pet')
+
+    equal(addon.PetHealthIcon.frame.shown, false)
+end)
+
+test('threshold and percentage settings apply immediately', function()
+    local _, addon = setup(400)
+
+    addon.Config.Set('petHealthThreshold', 50)
+    addon.Config.Set('petShowPercent', true)
+
+    equal(addon.PetHealthIcon.frame.shown, true)
+    equal(addon.PetHealthIcon.countText.text, '40%')
+    equal(addon.Config.CanSet('petHealthThreshold', 101), false)
+    equal(addon.Config.CanSet('petHealthThreshold', 0), false)
+end)
+
+test('disable hides the pet indicator', function()
+    local _, addon = setup(100)
+
+    addon.Config.Set('petHealthEnabled', false)
+
+    equal(addon.PetHealthIcon.frame.shown, false)
+end)
+
+test('loading hides the indicator until world entry', function()
+    local world, addon = setup(100)
+    world:fire('PLAYER_LEAVING_WORLD')
+    equal(addon.PetHealthIcon.frame.shown, false)
+
+    world:fire('UNIT_HEALTH', 'pet')
+    equal(addon.PetHealthIcon.frame.shown, false)
+    world:fire('PLAYER_ENTERING_WORLD')
+    equal(addon.PetHealthIcon.frame.shown, true)
+end)
+
+test('unrelated unit events and idle frames do not query pet health', function()
+    local world = setup(500)
+    local reads = world.petReads
+
+    world:fire('UNIT_HEALTH', 'target')
+    world:fire('UNIT_PET', 'party1')
+    world:tick(1)
+
+    equal(world.petReads, reads)
+end)
+
+test('pet preview is movable and closes with settings', function()
+    local _, addon = setup(1000)
+    addon.SettingsPanel.movePetButton.scripts.OnClick()
+    local frame = addon.PetHealthIcon.frame
+    equal(frame.shown, true)
+    frame.centerX, frame.centerY = 700, 400
+
+    frame.scripts.OnDragStop(frame)
+    addon.SettingsPanel.canvas:Hide()
+
+    equal(addon.Config.Get('petX'), 200)
+    equal(addon.Config.Get('petY'), -100)
+    equal(frame.shown, false)
+    equal(frame.mouseEnabled, false)
+end)
+
+test('zero maximum health hides the indicator', function()
+    local world, addon = setup(100)
+    world.petMax = 0
+
+    world:fire('UNIT_MAXHEALTH', 'pet')
+
+    equal(addon.PetHealthIcon.frame.shown, false)
+end)
+
+test('non-hunters do not create or read pet health indicator', function()
+    local world, addon = setup(100, function(w) w.class = 'PALADIN' end)
+
+    equal(addon.PetHealthIcon.frame, nil)
+    equal(world.petReads, 0)
+end)
+
+test('combat pet health updates show and hide the icon', function()
+    local world, addon = setup(500)
+    world.combat = true
+    world.petHealth = 200
+
+    world:fire('UNIT_HEALTH', 'pet')
+    equal(addon.PetHealthIcon.frame.shown, true)
+    world.petHealth = 800
+    world:fire('UNIT_HEALTH', 'pet')
+    equal(addon.PetHealthIcon.frame.shown, false)
+end)
+
+test('exact custom threshold is not hidden by percentage rounding', function()
+    local _, addon = setup(280)
+
+    addon.Config.Set('petHealthThreshold', 28)
+
+    equal(addon.PetHealthIcon.frame.shown, true)
+end)
+
+print(string.format('\n%d passed, %d failed', passed, failed))
+os.exit(failed == 0 and 0 or 1)
