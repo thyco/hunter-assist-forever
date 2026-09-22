@@ -3,7 +3,7 @@
 ## IconTexture: Interface\AddOns\HunterAssistForever\Media\Hunter.tga
 ## Notes: Equipped ammo, low pet health indicator, and reactive Mongoose Bite / Counterattack glow.
 ## Author: Hunter Assist Forever
-## Version: 0.5.0
+## Version: 0.5.1
 ## OptionalDeps: LibCustomGlow-1.0
 ## SavedVariables: HunterAssistForeverDB
 
