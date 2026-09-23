@@ -31,12 +31,29 @@ function Ammo:Initialize()
         end
 
         if event == "PLAYER_LEAVING_WORLD" then
+            self.worldGeneration = (self.worldGeneration or 0) + 1
             self.worldReady = false
             self:Stop()
             return
         elseif event == "PLAYER_ENTERING_WORLD" then
-            self.worldReady = true
+            self.worldReady = false
             self.warned = false
+            self.worldGeneration = (self.worldGeneration or 0) + 1
+            local generation = self.worldGeneration
+            self:Stop()
+            self.status = "waiting for inventory to settle"
+
+            -- The ammo slot can briefly appear empty after world entry. Ignore
+            -- early inventory events and read fresh data once loading settles.
+            C_Timer.After(3, function()
+                if self.worldGeneration ~= generation then
+                    return
+                end
+
+                self.worldReady = true
+                self:Refresh()
+            end)
+            return
         end
 
         self:Refresh()

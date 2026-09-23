@@ -1,10 +1,10 @@
 # Hunter Assist Forever
 
-A hunter-only equipped ammunition indicator for WoW Forever (interface 16001). Version 0.5.1 includes the ammo indicator, low pet health icon and Mongoose Bite / Counterattack glow. Range tinting has been removed.
+A hunter-only equipped ammunition indicator for WoW Forever (interface 16001). Version 0.5.2 includes the ammo indicator, low pet health icon and Mongoose Bite / Counterattack glow. Range tinting has been removed.
 
 ## Install
 
-Replace the existing `Interface/AddOns/HunterAssistForever` folder with the folder in `dist/HunterAssistForever-0.5.1.zip`, then reload the UI. Existing ammo settings are retained. Existing reactive glow settings are retained too; obsolete range settings are ignored.
+Replace the existing `Interface/AddOns/HunterAssistForever` folder with the folder in `dist/HunterAssistForever-0.5.2.zip`, then reload the UI. Existing ammo settings are retained. Existing reactive glow settings are retained too; obsolete range settings are ignored.
 
 Open **Settings → AddOns → Hunter Assist Forever**, or type `/haf config`.
 
@@ -26,7 +26,7 @@ Warnings appear only on your own screen, once per low-ammo episode. Resupplying 
 
 Keep the cutoffs ordered: **hide > yellow > red > warning**. Press Enter or leave a field to save it. When increasing all cutoffs, start at the top; when decreasing them, start at the bottom. Select **Move icon**, drag the preview, then close settings to finish. The initial position is below the center of the screen, and its position is saved account-wide.
 
-Ammo checks respond to inventory, equipment and world events, with no additional polling loop. They only run for hunters.
+Ammo checks wait three seconds after login or a loading screen before reading the equipped slot, to avoid warnings from temporarily empty inventory data. Early inventory events wait too; normal inventory and equipment updates are immediate afterward. No polling loop is added. They only run for hunters.
 
 ## Mongoose Bite / Counterattack glow
 

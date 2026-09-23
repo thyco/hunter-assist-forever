@@ -13,7 +13,7 @@ local function test(name, run)
     end
 end
 
-local function setup(count, configure)
+local function setup(count, configure, beforeSettling)
     local world = H.new()
     world.ammoCount = count
     world.ammoTexture = 1234
@@ -53,6 +53,7 @@ local function setup(count, configure)
     assert(world.addon.Ammo, 'ammo feature not implemented')
     equal(#world.warnings, 0, 'wait for world entry before warning')
     world:fire('PLAYER_ENTERING_WORLD')
+    if not beforeSettling then world:tick(3) end
 
     return world, world.addon
 end
@@ -131,6 +132,8 @@ test('loading stops checks and world entry permits one new warning', function()
 
     world:fire('PLAYER_ENTERING_WORLD')
     world:fire('BAG_UPDATE_DELAYED')
+    equal(#world.warnings, 1)
+    world:tick(3)
 
     equal(#world.warnings, 2)
 end)
@@ -294,6 +297,45 @@ test('upgrade keeps ammo and reactive preferences but removes range checks', fun
 
     world.env.SlashCmdList.HUNTERASSISTFOREVER('')
     assert(table.concat(world.messages, '\n'):find('Ammo: 500', 1, true))
+end)
+
+test('login empty slot cannot warn before inventory settles', function()
+    local world, addon = setup(0, function(w) w.ammoTexture = nil end, true)
+    equal(#world.warnings, 0)
+    equal(addon.AmmoIcon.frame.shown, false)
+
+    world:fire('BAG_UPDATE_DELAYED')
+    world:fire('UNIT_INVENTORY_CHANGED', 'player')
+    world:tick(2)
+    equal(#world.warnings, 0)
+    world.ammoTexture, world.ammoCount = 1234, 1000
+    world:tick(1)
+
+    equal(#world.warnings, 0)
+    equal(addon.Ammo.sample.count, 1000)
+end)
+
+test('genuinely low ammo warns once after settling without another inventory event', function()
+    local world = setup(100, nil, true)
+    equal(#world.warnings, 0)
+
+    world:tick(3)
+    world:fire('BAG_UPDATE_DELAYED')
+
+    equal(#world.warnings, 1)
+end)
+
+test('old world entry timer cannot end a newer loading delay', function()
+    local world = setup(100, nil, true)
+    world:tick(2)
+    world:fire('PLAYER_LEAVING_WORLD')
+    world:fire('PLAYER_ENTERING_WORLD')
+
+    world:tick(1)
+    equal(#world.warnings, 0)
+    world:tick(2)
+
+    equal(#world.warnings, 1)
 end)
 
 print(string.format('\n%d passed, %d failed', passed, failed))

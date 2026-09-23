@@ -204,7 +204,23 @@ function Helpers.new()
         end
     end
 
+    world.timerTime, world.timers = 0, {}
+    env.C_Timer = { After = function(delay, callback)
+        world.timers[#world.timers + 1] = { at = world.timerTime + delay, callback = callback }
+    end }
+
     function world:tick(elapsed)
+        self.timerTime = self.timerTime + elapsed
+        local pending = self.timers
+        self.timers = {}
+        for _, timer in ipairs(pending) do
+            if timer.at <= self.timerTime then
+                timer.callback()
+            else
+                self.timers[#self.timers + 1] = timer
+            end
+        end
+
         for _, value in ipairs(self.frames) do
             if value.scripts.OnUpdate then value.scripts.OnUpdate(value, elapsed) end
         end
