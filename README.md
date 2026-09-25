@@ -1,10 +1,10 @@
 # Hunter Assist Forever
 
-A hunter-only equipped ammunition indicator for WoW Forever (interface 16001). Version 0.5.2 includes the ammo indicator, low pet health icon and Mongoose Bite / Counterattack glow. Range tinting has been removed.
+A hunter-only equipped ammunition indicator for WoW Forever (interface 16001). Version 0.6.1 includes ammo, pet health and happiness indicators, and the Mongoose Bite / Counterattack glow. Range tinting has been removed.
 
 ## Install
 
-Replace the existing `Interface/AddOns/HunterAssistForever` folder with the folder in `dist/HunterAssistForever-0.5.2.zip`, then reload the UI. Existing ammo settings are retained. Existing reactive glow settings are retained too; obsolete range settings are ignored.
+Replace the existing `Interface/AddOns/HunterAssistForever` folder with the folder in `dist/HunterAssistForever-0.6.1.zip`, then reload the UI. Existing ammo settings are retained. Existing reactive glow settings are retained too; obsolete range settings are ignored.
 
 Open **Settings → AddOns → Hunter Assist Forever**, or type `/haf config`.
 
@@ -38,18 +38,20 @@ The bundled LibCustomGlow renderer uses Blizzard's native proc artwork/colors. T
 
 ## Pet settings
 
-The separate **Pet settings** section controls a silent, red-only low-health icon:
+The separate **Pet settings** section controls two pet icons. The low-health icon is red when active:
 
 - **Enable low pet health icon** is on by default.
 - **Health threshold (%)** defaults to 30 and accepts whole percentages from 1 to 100. The icon appears at or below the threshold and hides above it.
 - **Show health percentage** is off by default.
 - **Move icon** shows a red preview; drag it and close settings to save its position. Its initial position is beside the ammo icon.
 
-There is no sound or raid-warning message for pet health. The icon hides for absent/dead pets, loading screens, and unavailable/restricted health values. It updates from pet health, maximum health and pet-change events, with no polling loop. It works both in and out of combat when readable data is available. Validate in-game with the pet taking damage and then healing above the threshold.
+The separate **pet happiness icon** is hidden when happy, yellow when content, and red when unhappy. Enable it with **Enable pet happiness icon** (on by default). **Move happiness icon** lets you place it independently of the health icon; it starts to the right of the health icon. Happiness changes update from WoW's pet events, with no polling loop. Missing, dead, or unreadable pet data hides it.
+
+When health first falls to or below its threshold, or happiness first becomes unhappy, a local raid-style warning appears with a gentle whisper chime. Each alert fires once until the pet recovers; content stays visual only. If both alerts occur together, both messages appear with one chime. No raid chat message is sent. The icons hide for absent/dead pets, loading screens, and unavailable/restricted values. They update from pet events without a polling loop and work in and out of combat when readable data is available.
 
 ## Diagnostics and development
 
-`/haf` prints the client version and current equipped ammo count/status. No spell range APIs or deadzone tint hooks are used. The reactive glow retains its combat-only readiness updates.
+`/haf` prints the client version and current ammo, pet health and pet happiness status. No spell range APIs or deadzone tint hooks are used. The reactive glow retains its combat-only readiness updates.
 
 Run `lua tests/ammo.lua`, `lua tests/reactive.lua`, `lua tests/glow_integration.lua`, `lua tests/pet.lua` and `python3 scripts/package.py`. Tests cover thresholds, warning rearming, restricted values, settings, moving the icon, class gating and upgrading with old saved settings. Real-client verification is still needed for visual layout and API behavior.
 
@@ -60,6 +62,8 @@ The addon follows the module/packaging structure of `paladin-assist-forever` and
 - Confirm Ammo check, Mongoose Bite / Counterattack and Pet settings appear in settings and your saved count/position/cutoffs remain intact.
 - Compare the count with the equipped ammo slot, including in combat.
 - Verify threshold colors, the optional count, Move icon, and the local warning below the threshold.
+- Confirm the happiness icon is hidden when happy, yellow when content, and red when unhappy. Feed your pet or let its happiness change; verify the icon updates without a reload. Test moving it independently.
+- Check that low health and unhappy each show a local warning with a gentle chime once per episode, while content stays quiet. Confirm the low-ammo warning still uses its original sound.
 - Verify no range coloring remains after reloading and the selected reactive button still glows after a dodge when Mongoose Bite is usable and off cooldown.
 
 ## API reference

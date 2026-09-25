@@ -47,3 +47,11 @@ Remove deadzone range tinting and its settings, range APIs and polling. Retain b
 ## Pet health indicator (0.5.0)
 
 Separate Pet settings group, enabled by default with 30% configurable threshold, optional health percentage off by default, and a movable red-only icon. The user found raid warnings too loud, so this feature is a silent visual alert with no warning messages or sounds. Hidden above threshold; shown at or below it. Hide for missing/dead pets and unknown/restricted health. Read UnitHealth/UnitHealthMax only after readability guards and finite positive checks, using current pet unit events and world lifecycle events. Preserve ammo and reactive glow behavior. In-game validation of the health APIs and settings layout remains necessary.
+
+## Pet happiness indicator (0.6.0)
+
+The user wants another icon in Pet settings: hidden for happy, yellow for content, red for unhappy, matching the pet health icon's silent visual alert. Use GetPetHappiness() states 1/2/3 and UNIT_HAPPINESS, with unit and world events for pet replacement, death, login and loading. Hide for missing/dead pets and unreadable or unknown happiness values. A separate enable checkbox and independent move preview are on by default at x=100, y=-180. Use the native PetPaperDollFrame happiness artwork. Keep health, ammo and reactive glow behavior unchanged. Verify actual Forever event and texture behavior in-game.
+
+## Pet warning sound (0.6.1)
+
+Low pet health and unhappy pet happiness each show a local raid-style message on the RaidWarningFrame when entering the red state. Play the client whisper notification (`SOUNDKIT.TELL_MESSAGE`) rather than the loud raid-warning cue. The content state remains visual only. Each alert latches until health rises above its threshold or happiness improves; missing or dead pets reset the latch, while unreadable data does not. Both messages can appear together, but chimes within one second are coalesced. Warnings only run when their corresponding indicator is enabled. Do not send raid chat messages or alter the ammo warning. Verify the sound and visual placement in the Forever client.

@@ -16,6 +16,8 @@ local function setup(health, configure)
     local world = H.new()
     world.petHealth, world.petMax, world.petExists, world.petDead = health, 1000, true, false
     world.petReads = 0
+    world.happiness, world.happinessReads = 3, 0
+    world.petWarnings, world.petSounds, world.now = {}, {}, 100
     world.env.UnitExists = function(unit) equal(unit, 'pet'); return world.petExists end
     world.env.UnitIsDeadOrGhost = function(unit) equal(unit, 'pet'); return world.petDead end
     world.env.UnitHealth = function(unit)
@@ -24,8 +26,22 @@ local function setup(health, configure)
         return world.petHealth
     end
     world.env.UnitHealthMax = function(unit) equal(unit, 'pet'); return world.petMax end
-    world.env.RaidNotice_AddMessage = function() error('pet alert must be silent') end
-    world.env.PlaySound = function() error('pet alert must be silent') end
+    world.env.GetPetHappiness = function()
+        world.happinessReads = world.happinessReads + 1
+        return world.happiness
+    end
+    world.env.RaidWarningFrame = {}
+    world.env.ChatTypeInfo = { RAID_WARNING = { r = 1, g = 0.2, b = 0.2 } }
+    world.env.SOUNDKIT = { TELL_MESSAGE = 3081, RAID_WARNING = 8959 }
+    world.env.GetTime = function() return world.now end
+    world.env.RaidNotice_AddMessage = function(frame, message)
+        equal(frame, world.env.RaidWarningFrame)
+        world.petWarnings[#world.petWarnings + 1] = message
+    end
+    world.env.PlaySound = function(sound)
+        world.petSounds[#world.petSounds + 1] = sound
+    end
+    world.env.SendChatMessage = function() error('pet warnings must be local') end
     if configure then configure(world) end
 
     for line in io.lines('HunterAssistForever/HunterAssistForever.toc') do
@@ -46,14 +62,15 @@ test('healthy pet icon is hidden', function()
     equal(addon.PetHealthIcon.frame.shown, false)
 end)
 
-test('exact threshold shows only red without sound or warning', function()
+test('exact threshold shows red and one local warning', function()
     local world, addon = setup(300)
 
     equal(addon.PetHealthIcon.frame.shown, true)
     equal(addon.PetHealthIcon.texture.color[1], 1)
     equal(addon.PetHealthIcon.texture.color[2], 0.2)
     equal(addon.PetHealthIcon.countText.shown, false)
-    equal(#world.messages, 0)
+    equal(#world.petWarnings, 1)
+    equal(#world.petSounds, 1)
 end)
 
 test('healing above threshold hides the icon', function()
@@ -166,7 +183,9 @@ test('non-hunters do not create or read pet health indicator', function()
     local world, addon = setup(100, function(w) w.class = 'PALADIN' end)
 
     equal(addon.PetHealthIcon.frame, nil)
+    equal(addon.PetHappinessIcon.frame, nil)
     equal(world.petReads, 0)
+    equal(world.happinessReads, 0)
 end)
 
 test('combat pet health updates show and hide the icon', function()
@@ -187,6 +206,201 @@ test('exact custom threshold is not hidden by percentage rounding', function()
     addon.Config.Set('petHealthThreshold', 28)
 
     equal(addon.PetHealthIcon.frame.shown, true)
+end)
+
+test('happy pet has no happiness icon', function()
+    local _, addon = setup(1000)
+
+    equal(addon.PetHappinessIcon.frame.shown, false)
+end)
+
+test('content pet displays a yellow happiness icon', function()
+    local world, addon = setup(1000)
+    world.happiness = 2
+
+    world:fire('UNIT_HAPPINESS', 'pet')
+
+    equal(addon.PetHappinessIcon.frame.shown, true)
+    equal(addon.PetHappinessIcon.texture.color[1], 1)
+    equal(addon.PetHappinessIcon.texture.color[2], 0.85)
+    equal(#world.messages, 0)
+end)
+
+test('unhappy pet displays a red happiness icon', function()
+    local world, addon = setup(1000)
+    world.happiness = 1
+
+    world:fire('UNIT_HAPPINESS', 'pet')
+
+    equal(addon.PetHappinessIcon.frame.shown, true)
+    equal(addon.PetHappinessIcon.texture.color[1], 1)
+    equal(addon.PetHappinessIcon.texture.color[2], 0.2)
+    equal(#world.messages, 0)
+end)
+
+test('feeding back to happy hides the happiness icon', function()
+    local world, addon = setup(1000)
+    world.happiness = 1
+    world:fire('UNIT_HAPPINESS', 'pet')
+    world.happiness = 3
+
+    world:fire('UNIT_HAPPINESS', 'pet')
+
+    equal(addon.PetHappinessIcon.frame.shown, false)
+end)
+
+test('unavailable or restricted happiness hides without comparing it', function()
+    local world, addon = setup(1000)
+    world.happiness = world.secret
+    world:fire('UNIT_HAPPINESS', 'pet')
+    equal(addon.PetHappinessIcon.frame.shown, false)
+
+    world.happiness = nil
+    world:fire('UNIT_HAPPINESS', 'pet')
+    equal(addon.PetHappinessIcon.frame.shown, false)
+end)
+
+test('missing or dead pets hide the happiness icon', function()
+    local world, addon = setup(1000)
+    world.happiness = 1
+    world:fire('UNIT_HAPPINESS', 'pet')
+    world.petExists = false
+
+    world:fire('UNIT_PET', 'player')
+
+    equal(addon.PetHappinessIcon.frame.shown, false)
+    world.petExists, world.petDead = true, true
+    world:fire('UNIT_FLAGS', 'pet')
+    equal(addon.PetHappinessIcon.frame.shown, false)
+end)
+
+test('happiness setting disables the icon without changing health alert', function()
+    local world, addon = setup(200)
+    world.happiness = 1
+    world:fire('UNIT_HAPPINESS', 'pet')
+
+    addon.Config.Set('petHappinessEnabled', false)
+
+    equal(addon.PetHappinessIcon.frame.shown, false)
+    equal(addon.PetHealthIcon.frame.shown, true)
+end)
+
+test('happiness icon can be moved independently', function()
+    local _, addon = setup(1000)
+    addon.SettingsPanel.moveHappinessButton.scripts.OnClick()
+    local frame = addon.PetHappinessIcon.frame
+    equal(frame.shown, true)
+    frame.centerX, frame.centerY = 750, 390
+
+    frame.scripts.OnDragStop(frame)
+    addon.SettingsPanel.canvas:Hide()
+
+    equal(addon.Config.Get('petHappinessX'), 250)
+    equal(addon.Config.Get('petHappinessY'), -110)
+    equal(frame.shown, false)
+end)
+
+test('happiness updates remain event driven', function()
+    local world = setup(1000)
+    local reads = world.happinessReads
+
+    world:tick(1)
+    world:fire('UNIT_PET', 'party1')
+
+    equal(world.happinessReads, reads)
+end)
+
+test('happiness API failure hides the icon without an error', function()
+    local world, addon = setup(1000)
+    world.happiness = 2
+    world:fire('UNIT_HAPPINESS', 'pet')
+    world.env.GetPetHappiness = function() error('unavailable') end
+
+    world:fire('UNIT_HAPPINESS', 'pet')
+
+    equal(addon.PetHappinessIcon.frame.shown, false)
+end)
+
+test('loading hides the happiness icon and restores its current state', function()
+    local world, addon = setup(1000)
+    world.happiness = 1
+    world:fire('UNIT_HAPPINESS', 'pet')
+    world:fire('PLAYER_LEAVING_WORLD')
+    equal(addon.PetHappinessIcon.frame.shown, false)
+
+    world:fire('PLAYER_ENTERING_WORLD')
+
+    equal(addon.PetHappinessIcon.frame.shown, true)
+end)
+
+test('low pet health warns once and rearms after recovery', function()
+    local world = setup(600)
+    equal(#world.petWarnings, 0)
+
+    world.petHealth = 250
+    world:fire('UNIT_HEALTH', 'pet')
+    world:fire('UNIT_HEALTH', 'pet')
+    equal(#world.petWarnings, 1)
+    assert(world.petWarnings[1]:find('Pet health low', 1, true))
+    equal(world.petSounds[1], 3081)
+
+    world.petHealth = 700
+    world:fire('UNIT_HEALTH', 'pet')
+    world.petHealth = 200
+    world.now = 102
+    world:fire('UNIT_HEALTH', 'pet')
+
+    equal(#world.petWarnings, 2)
+    equal(#world.petSounds, 2)
+end)
+
+test('content stays visual only; unhappy warns once per episode', function()
+    local world = setup(1000)
+    world.happiness = 2
+    world:fire('UNIT_HAPPINESS', 'pet')
+    equal(#world.petWarnings, 0)
+    equal(#world.petSounds, 0)
+
+    world.happiness = 1
+    world:fire('UNIT_HAPPINESS', 'pet')
+    world:fire('UNIT_HAPPINESS', 'pet')
+    equal(#world.petWarnings, 1)
+    assert(world.petWarnings[1]:find('Pet unhappy', 1, true))
+    equal(world.petSounds[1], 3081)
+
+    world.happiness = 2
+    world:fire('UNIT_HAPPINESS', 'pet')
+    world.happiness = 1
+    world.now = 102
+    world:fire('UNIT_HAPPINESS', 'pet')
+
+    equal(#world.petWarnings, 2)
+    equal(#world.petSounds, 2)
+end)
+
+test('simultaneous pet alerts show both texts with one gentle chime', function()
+    local world = setup(1000, function(w) w.happiness = 1 end)
+    world.petHealth = 200
+
+    world:fire('UNIT_HEALTH', 'pet')
+
+    equal(#world.petWarnings, 2)
+    equal(#world.petSounds, 1)
+    equal(world.petSounds[1], 3081)
+end)
+
+test('restricted pet data cannot invent or rearm a warning', function()
+    local world = setup(1000)
+    world.happiness = 1
+    world:fire('UNIT_HAPPINESS', 'pet')
+    equal(#world.petWarnings, 1)
+
+    world.happiness = world.secret
+    world:fire('UNIT_HAPPINESS', 'pet')
+    world.happiness = 1
+    world:fire('UNIT_HAPPINESS', 'pet')
+
+    equal(#world.petWarnings, 1)
 end)
 
 print(string.format('\n%d passed, %d failed', passed, failed))

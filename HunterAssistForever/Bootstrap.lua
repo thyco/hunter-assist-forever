@@ -36,5 +36,7 @@ SlashCmdList.HUNTERASSISTFOREVER = function(message)
     print("Pet health: " .. (addon.PetHealth.sample
         and (math.floor(addon.PetHealth.sample.percent + 0.5) .. "%") or "unavailable")
         .. " | " .. (addon.PetHealth.status or "not checked"))
-    print("/haf config to configure ammo, pet health and reactive glow settings.")
+    addon.PetHappiness:Refresh()
+    print("Pet happiness: " .. (addon.PetHappiness.status or "not checked"))
+    print("/haf config to configure ammo, pet and reactive glow settings.")
 end

@@ -122,6 +122,7 @@ function Helpers.new()
         function value:CreateFontString() return frame('FontString', nil, self) end
         function value:CreateTexture() return frame('Texture', nil, self) end
         function value:SetTexture(texture) self.texture = texture end
+        function value:SetTexCoord(...) self.texCoord = { ... } end
         function value:SetAllPoints() end
         function value:SetScrollChild(child) self.scrollChild = child end
         function value:ClearAllPoints() self.point = nil end

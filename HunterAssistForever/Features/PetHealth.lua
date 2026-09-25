@@ -34,6 +34,7 @@ function Pet:Initialize()
             return
         elseif event == "PLAYER_ENTERING_WORLD" then
             self.worldReady = true
+            self.warned = false
         elseif event == "UNIT_PET" then
             if not addon.Client.Readable(unit) or unit ~= "player" then
                 return
@@ -56,17 +57,29 @@ function Pet:Refresh()
 
     self.sample = nil
     self.status = "no living pet or health unavailable"
-    if addon.Client.Boolean(read(UnitExists, "pet")) == true
-        and addon.Client.Boolean(read(UnitIsDeadOrGhost, "pet")) == false then
+    local exists = addon.Client.Boolean(read(UnitExists, "pet"))
+    local dead = exists == true and addon.Client.Boolean(read(UnitIsDeadOrGhost, "pet"))
+    if exists == true and dead == false then
         local health = read(UnitHealth, "pet")
         local maximum = read(UnitHealthMax, "pet")
         if positive(health) and positive(maximum) and health <= maximum then
             self.sample = { health = health, maximum = maximum, percent = (health / maximum) * 100 }
             self.status = "pet health"
         end
+    elseif exists == false or dead == true then
+        self.warned = false
     end
 
     addon.PetHealthIcon:Set(self.sample, true)
+    if self.sample then
+        local low = self.sample.health * 100 <= self.sample.maximum * addon.Config.Get("petHealthThreshold")
+        if low and not self.warned then
+            addon.PetWarning.Show("Pet health low!")
+            self.warned = true
+        elseif not low then
+            self.warned = false
+        end
+    end
 end
 
 function Pet:ApplySettings()

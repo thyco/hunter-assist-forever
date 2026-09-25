@@ -50,7 +50,7 @@ function panel:Initialize()
     scroll:SetPoint("TOPLEFT", canvas, "TOPLEFT", 0, -8)
     scroll:SetPoint("BOTTOMRIGHT", canvas, "BOTTOMRIGHT", -28, 8)
     local content = CreateFrame("Frame", nil, scroll)
-    content:SetSize(580, 970)
+    content:SetSize(580, 1130)
     scroll:SetScrollChild(content)
     scroll:SetScript("OnSizeChanged", function(_, width)
         content:SetWidth(math.max(1, width))
@@ -60,14 +60,27 @@ function panel:Initialize()
     local ammo = widgets.Section(content, "Ammo check", "Equipped ammunition · local low-ammo warning", -48, 380)
     local reactive = widgets.Section(content, "Mongoose Bite / Counterattack",
         "Combat only · either learned spell usable and off cooldown", -444, 210)
-    local pet = widgets.Section(content, "Pet settings", "Silent red icon when your pet's health is low", -670, 270)
+    local pet = widgets.Section(content, "Pet settings", "Silent health and happiness icons", -670, 430)
     self.sections = { ammo, reactive, pet }
 
     checkbox(pet, "petHealthEnabled", "Enable low pet health icon", -62,
         "Show a red icon at or below the health threshold. No sound or raid warning.")
     checkbox(pet, "petShowPercent", "Show health percentage", -96,
         "Display the pet's current health percentage on the red icon.")
-    local petFeedback = widgets.Text(pet, "", 20, -232)
+    widgets.Text(pet, "Happiness", 20, -238, "GameFontNormal")
+    checkbox(pet, "petHappinessEnabled", "Enable pet happiness icon", -270,
+        "Show yellow when content, red when unhappy, and nothing when happy. No sound or warning text.")
+    local moveHappiness = CreateFrame("Button", nil, pet, "UIPanelButtonTemplate")
+    moveHappiness:SetPoint("TOPLEFT", pet, "TOPLEFT", 20, -314)
+    moveHappiness:SetSize(180, 28)
+    moveHappiness:SetText("Move happiness icon")
+    moveHappiness:SetScript("OnClick", function()
+        addon.PetHappinessIcon:SetPreview(true)
+    end)
+    widgets.Tooltip(moveHappiness, "Show the happiness icon and drag it. Close settings to save the position.")
+    self.moveHappinessButton = moveHappiness
+
+    local petFeedback = widgets.Text(pet, "", 20, -380)
     petFeedback:SetTextColor(1, 0.4, 0.3)
     self.controls.petHealthThreshold = widgets.Number(pet, "Health threshold (%)", -142,
         setting("petHealthThreshold", "Pet health threshold"), function(value)
@@ -137,6 +150,7 @@ function panel:Initialize()
     canvas:SetScript("OnHide", function()
         addon.AmmoIcon:SetPreview(false)
         addon.PetHealthIcon:SetPreview(false)
+        addon.PetHappinessIcon:SetPreview(false)
     end)
     addon.Config.Subscribe(function()
         self:Refresh()
