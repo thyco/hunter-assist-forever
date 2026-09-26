@@ -58,14 +58,30 @@ local function setup(health, configure)
     return world, world.addon
 end
 
+test('fresh setup uses a 35 percent pet health threshold', function()
+    local _, addon = setup(350)
+
+    equal(addon.Config.Get('petHealthThreshold'), 35)
+    equal(addon.PetHealthIcon.frame.shown, true)
+end)
+
+test('saved pet health threshold survives a default change', function()
+    local _, addon = setup(300, function(world)
+        world.env.HunterAssistForeverDB = { petHealthThreshold = 25 }
+    end)
+
+    equal(addon.Config.Get('petHealthThreshold'), 25)
+    equal(addon.PetHealthIcon.frame.shown, false)
+end)
+
 test('healthy pet icon is hidden', function()
-    local _, addon = setup(301)
+    local _, addon = setup(351)
 
     equal(addon.PetHealthIcon.frame.shown, false)
 end)
 
 test('exact threshold shows red and one local warning', function()
-    local world, addon = setup(300)
+    local world, addon = setup(350)
 
     equal(addon.PetHealthIcon.frame.shown, true)
     equal(addon.PetHealthIcon.texture.color[1], 1)
@@ -143,11 +159,11 @@ test('restricted pet health still drives low-health icon through a client curve'
     equal(addon.PetHealthIcon.countText.shown, false)
     equal(#world.petWarnings, 0)
 
-    world.petFraction = 0.3
+    world.petFraction = 0.35
     world:fire('UNIT_HEALTH', 'pet')
     equal(addon.PetHealthIcon.frame.alpha, 1)
 
-    world.petFraction = 0.31
+    world.petFraction = 0.36
     world:fire('UNIT_HEALTH', 'pet')
     equal(addon.PetHealthIcon.frame.alpha, 0)
 

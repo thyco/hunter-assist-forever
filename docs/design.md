@@ -63,3 +63,7 @@ The original 0.6.0 implementation read the absent legacy global `GetPetHappiness
 ## Restricted pet health display (0.6.3)
 
 Forever can return secret pet-health values even outside combat. The old readable-number path safely hid the icon, but this made it ineffective in the reported client state. For a living pet with unreadable health, build a step curve at the configured health fraction, pass it to `UnitHealthPercent("pet", true, curve)`, and pass the resulting alpha directly to the icon frame. Never compare or stringify a secret alpha. The icon is visually hidden above the threshold and red below it. Keep the frame unprotected and the existing readable-number path for the warning and optional percentage. Secret values cannot drive a Lua warning latch, so restricted mode is visual only; `/haf` reports that state. Hide for absent or dead pets, loading, and missing/failed percent or curve APIs. Cache the curve until the threshold changes. Verify curve semantics and icon appearance in the Forever client.
+
+## Pet health default threshold (0.6.5)
+
+New installs use 35% as the pet-health threshold. Existing saved thresholds remain unchanged. The icon visibility and warning use the same configured threshold as before.

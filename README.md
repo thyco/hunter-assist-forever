@@ -1,10 +1,10 @@
 # Hunter Assist Forever
 
-A hunter-only equipped ammunition indicator for WoW Forever (interface 16001). Version 0.6.4 includes ammo, pet health and happiness indicators, and the Mongoose Bite / Counterattack glow. Range tinting has been removed.
+A hunter-only equipped ammunition indicator for WoW Forever (interface 16001). Version 0.6.5 includes ammo, pet health and happiness indicators, and the Mongoose Bite / Counterattack glow. Range tinting has been removed.
 
 ## Install
 
-Replace the existing `Interface/AddOns/HunterAssistForever` folder with the folder in `dist/HunterAssistForever-0.6.4.zip`, then reload the UI. Existing ammo settings are retained. Existing reactive glow settings are retained too; obsolete range settings are ignored.
+Replace the existing `Interface/AddOns/HunterAssistForever` folder with the folder in `dist/HunterAssistForever-0.6.5.zip`, then reload the UI. Existing ammo settings are retained. Existing reactive glow settings are retained too; obsolete range settings are ignored.
 
 Open **Settings → AddOns → Hunter Assist Forever**, or type `/haf config`.
 
@@ -41,7 +41,7 @@ The bundled LibCustomGlow renderer uses Blizzard's native proc artwork/colors. T
 The separate **Pet settings** section controls two pet icons. The low-health icon is red when active:
 
 - **Enable low pet health icon** is on by default.
-- **Health threshold (%)** defaults to 30 and accepts whole percentages from 1 to 100. The icon appears at or below the threshold and hides above it.
+- **Health threshold (%)** defaults to 35 and accepts whole percentages from 1 to 100. The icon appears at or below the threshold and hides above it.
 - **Show health percentage** is off by default.
 - **Move icon** shows a red preview; drag it and close settings to save its position. Its initial position is beside the ammo icon.
 
