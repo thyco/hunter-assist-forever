@@ -60,16 +60,16 @@ function panel:Initialize()
     local ammo = widgets.Section(content, "Ammo check", "Equipped ammunition · local low-ammo warning", -48, 380)
     local reactive = widgets.Section(content, "Mongoose Bite / Counterattack",
         "Combat only · either learned spell usable and off cooldown", -444, 210)
-    local pet = widgets.Section(content, "Pet settings", "Silent health and happiness icons", -670, 430)
+    local pet = widgets.Section(content, "Pet settings", "Pet health and happiness alerts", -670, 430)
     self.sections = { ammo, reactive, pet }
 
     checkbox(pet, "petHealthEnabled", "Enable low pet health icon", -62,
-        "Show a red icon at or below the health threshold. No sound or raid warning.")
+        "Show a red icon at or below the threshold, with one local warning and gentle chime.")
     checkbox(pet, "petShowPercent", "Show health percentage", -96,
         "Display the pet's current health percentage on the red icon.")
     widgets.Text(pet, "Happiness", 20, -238, "GameFontNormal")
     checkbox(pet, "petHappinessEnabled", "Enable pet happiness icon", -270,
-        "Show yellow when content, red when unhappy, and nothing when happy. No sound or warning text.")
+        "Show yellow when content and red when unhappy, with one local warning and gentle chime. Hidden when happy.")
     local moveHappiness = CreateFrame("Button", nil, pet, "UIPanelButtonTemplate")
     moveHappiness:SetPoint("TOPLEFT", pet, "TOPLEFT", 20, -314)
     moveHappiness:SetSize(180, 28)

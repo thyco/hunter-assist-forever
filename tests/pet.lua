@@ -26,10 +26,12 @@ local function setup(health, configure)
         return world.petHealth
     end
     world.env.UnitHealthMax = function(unit) equal(unit, 'pet'); return world.petMax end
-    world.env.GetPetHappiness = function()
-        world.happinessReads = world.happinessReads + 1
-        return world.happiness
-    end
+    world.env.C_PetInfo = {
+        GetPetHappiness = function()
+            world.happinessReads = world.happinessReads + 1
+            return world.happiness
+        end,
+    }
     world.env.RaidWarningFrame = {}
     world.env.ChatTypeInfo = { RAID_WARNING = { r = 1, g = 0.2, b = 0.2 } }
     world.env.SOUNDKIT = { TELL_MESSAGE = 3081, RAID_WARNING = 8959 }
@@ -214,6 +216,16 @@ test('happy pet has no happiness icon', function()
     equal(addon.PetHappinessIcon.frame.shown, false)
 end)
 
+test('Forever namespaced happiness API shows the content icon without the legacy global', function()
+    local _, addon = setup(1000, function(world)
+        world.happiness = 2
+        world.env.GetPetHappiness = false
+    end)
+
+    equal(addon.PetHappinessIcon.frame.shown, true)
+    equal(addon.PetHappinessIcon.texture.color[2], 0.85)
+end)
+
 test('content pet displays a yellow happiness icon', function()
     local world, addon = setup(1000)
     world.happiness = 2
@@ -314,7 +326,7 @@ test('happiness API failure hides the icon without an error', function()
     local world, addon = setup(1000)
     world.happiness = 2
     world:fire('UNIT_HAPPINESS', 'pet')
-    world.env.GetPetHappiness = function() error('unavailable') end
+    world.env.C_PetInfo.GetPetHappiness = function() error('unavailable') end
 
     world:fire('UNIT_HAPPINESS', 'pet')
 

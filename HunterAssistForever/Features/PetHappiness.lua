@@ -56,7 +56,7 @@ function Happiness:Refresh()
     local exists = addon.Client.Boolean(read(UnitExists, "pet"))
     local dead = exists == true and addon.Client.Boolean(read(UnitIsDeadOrGhost, "pet"))
     if exists == true and dead == false then
-        local level = read(GetPetHappiness)
+        local level = read(C_PetInfo and C_PetInfo.GetPetHappiness)
         if addon.Client.Number(level) and (level == 1 or level == 2 or level == 3) then
             self.level = level
             self.status = level == 1 and "unhappy" or (level == 2 and "content" or "happy")

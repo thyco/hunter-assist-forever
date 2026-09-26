@@ -1,10 +1,10 @@
 # Hunter Assist Forever
 
-A hunter-only equipped ammunition indicator for WoW Forever (interface 16001). Version 0.6.1 includes ammo, pet health and happiness indicators, and the Mongoose Bite / Counterattack glow. Range tinting has been removed.
+A hunter-only equipped ammunition indicator for WoW Forever (interface 16001). Version 0.6.2 includes ammo, pet health and happiness indicators, and the Mongoose Bite / Counterattack glow. Range tinting has been removed.
 
 ## Install
 
-Replace the existing `Interface/AddOns/HunterAssistForever` folder with the folder in `dist/HunterAssistForever-0.6.1.zip`, then reload the UI. Existing ammo settings are retained. Existing reactive glow settings are retained too; obsolete range settings are ignored.
+Replace the existing `Interface/AddOns/HunterAssistForever` folder with the folder in `dist/HunterAssistForever-0.6.2.zip`, then reload the UI. Existing ammo settings are retained. Existing reactive glow settings are retained too; obsolete range settings are ignored.
 
 Open **Settings → AddOns → Hunter Assist Forever**, or type `/haf config`.
 
@@ -45,7 +45,7 @@ The separate **Pet settings** section controls two pet icons. The low-health ico
 - **Show health percentage** is off by default.
 - **Move icon** shows a red preview; drag it and close settings to save its position. Its initial position is beside the ammo icon.
 
-The separate **pet happiness icon** is hidden when happy, yellow when content, and red when unhappy. Enable it with **Enable pet happiness icon** (on by default). **Move happiness icon** lets you place it independently of the health icon; it starts to the right of the health icon. Happiness changes update from WoW's pet events, with no polling loop. Missing, dead, or unreadable pet data hides it.
+The separate **pet happiness icon** is hidden when happy, yellow when content, and red when unhappy. Enable it with **Enable pet happiness icon** (on by default). **Move happiness icon** lets you place it independently of the health icon; it starts to the right of the health icon. Happiness uses Forever's `C_PetInfo.GetPetHappiness` API and updates from pet events, with no polling loop. Missing, dead, or unreadable pet data hides it.
 
 When health first falls to or below its threshold, or happiness first becomes unhappy, a local raid-style warning appears with a gentle whisper chime. Each alert fires once until the pet recovers; content stays visual only. If both alerts occur together, both messages appear with one chime. No raid chat message is sent. The icons hide for absent/dead pets, loading screens, and unavailable/restricted values. They update from pet events without a polling loop and work in and out of combat when readable data is available.
 
@@ -68,4 +68,4 @@ The addon follows the module/packaging structure of `paladin-assist-forever` and
 
 ## API reference
 
-The equipped count follows the [Forever character panel](https://github.com/Gethe/wow-ui-source/blob/forever/Interface/AddOns/Blizzard_UIPanels_Game/Camelot/PaperDollFrame.lua).
+The equipped count follows the [Forever character panel](https://github.com/Gethe/wow-ui-source/blob/forever/Interface/AddOns/Blizzard_UIPanels_Game/Camelot/PaperDollFrame.lua). Pet happiness uses the [Forever pet API](https://github.com/Gethe/wow-ui-source/blob/forever/Interface/AddOns/Blizzard_APIDocumentationGenerated/PetInfoDocumentation.lua).

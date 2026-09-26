@@ -55,3 +55,7 @@ The user wants another icon in Pet settings: hidden for happy, yellow for conten
 ## Pet warning sound (0.6.1)
 
 Low pet health and unhappy pet happiness each show a local raid-style message on the RaidWarningFrame when entering the red state. Play the client whisper notification (`SOUNDKIT.TELL_MESSAGE`) rather than the loud raid-warning cue. The content state remains visual only. Each alert latches until health rises above its threshold or happiness improves; missing or dead pets reset the latch, while unreadable data does not. Both messages can appear together, but chimes within one second are coalesced. Warnings only run when their corresponding indicator is enabled. Do not send raid chat messages or alter the ammo warning. Verify the sound and visual placement in the Forever client.
+
+## Forever pet happiness API correction (0.6.2)
+
+The original 0.6.0 implementation read the absent legacy global `GetPetHappiness`, which silently left the icon hidden. Forever documents `C_PetInfo.GetPetHappiness`; read that API instead. The regression test omits the legacy global and verifies that a content pet appears at login. The same source drives subsequent happiness events and unhappy warnings. Refresh the settings copy so it describes the existing local warnings and gentle chime.
