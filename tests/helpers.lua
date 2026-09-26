@@ -114,6 +114,7 @@ function Helpers.new()
         function value:GetChecked() return self.checked end
         function value:Hide() self.shown = false; if self.scripts.OnHide then self.scripts.OnHide(self) end end
         function value:SetShown(shown) if shown then self:Show() else self:Hide() end end
+        function value:SetAlpha(alpha) self.alpha = alpha end
         function value:Show() self.shown = true; if self.scripts.OnShow then self.scripts.OnShow(self) end end
         function value:IsVisible() return self.shown end
         function value:SetScript(event, callback) self.scripts[event] = callback end

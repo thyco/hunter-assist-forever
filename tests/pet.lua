@@ -114,6 +114,66 @@ test('restricted health hides without arithmetic on the value', function()
     equal(addon.PetHealthIcon.frame.shown, false)
 end)
 
+test('restricted pet health still drives low-health icon through a client curve', function()
+    local world, addon = setup(1000, function(w)
+        w.petHealth = w.secret
+        w.petFraction = 0.2
+        w.env.Enum.LuaCurveType = { Step = 1 }
+        w.env.C_CurveUtil = { CreateCurve = function()
+            local curve = { points = {} }
+            function curve:SetType(kind) equal(kind, 1) end
+            function curve:AddPoint(input, output)
+                self.points[#self.points + 1] = { input, output }
+            end
+            return curve
+        end }
+        w.env.UnitHealthPercent = function(unit, predicted, curve)
+            equal(unit, 'pet')
+            equal(predicted, true)
+            local alpha = 0
+            for _, point in ipairs(curve.points) do
+                if w.petFraction >= point[1] then alpha = point[2] end
+            end
+            return alpha
+        end
+    end)
+
+    equal(addon.PetHealthIcon.frame.shown, true)
+    equal(addon.PetHealthIcon.frame.alpha, 1)
+    equal(addon.PetHealthIcon.countText.shown, false)
+    equal(#world.petWarnings, 0)
+
+    world.petFraction = 0.3
+    world:fire('UNIT_HEALTH', 'pet')
+    equal(addon.PetHealthIcon.frame.alpha, 1)
+
+    world.petFraction = 0.31
+    world:fire('UNIT_HEALTH', 'pet')
+    equal(addon.PetHealthIcon.frame.alpha, 0)
+
+    world.petFraction = 0.8
+    world:fire('UNIT_HEALTH', 'pet')
+    equal(addon.PetHealthIcon.frame.alpha, 0)
+
+    addon.Config.Set('petHealthThreshold', 90)
+    equal(addon.PetHealthIcon.frame.alpha, 1)
+end)
+
+test('secret health-curve alpha reaches the icon without Lua comparison', function()
+    local world, addon = setup(1000, function(w)
+        w.petHealth = w.secret
+        w.env.Enum.LuaCurveType = { Step = 1 }
+        w.env.C_CurveUtil = { CreateCurve = function()
+            return { SetType = function() end, AddPoint = function() end }
+        end }
+        w.env.UnitHealthPercent = function() return w.secret end
+    end)
+
+    equal(addon.PetHealthIcon.frame.shown, true)
+    equal(rawequal(addon.PetHealthIcon.frame.alpha, world.secret), true)
+    equal(#world.petWarnings, 0)
+end)
+
 test('threshold and percentage settings apply immediately', function()
     local _, addon = setup(400)
 

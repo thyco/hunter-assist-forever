@@ -59,3 +59,7 @@ Low pet health and unhappy pet happiness each show a local raid-style message on
 ## Forever pet happiness API correction (0.6.2)
 
 The original 0.6.0 implementation read the absent legacy global `GetPetHappiness`, which silently left the icon hidden. Forever documents `C_PetInfo.GetPetHappiness`; read that API instead. The regression test omits the legacy global and verifies that a content pet appears at login. The same source drives subsequent happiness events and unhappy warnings. Refresh the settings copy so it describes the existing local warnings and gentle chime.
+
+## Restricted pet health display (0.6.3)
+
+Forever can return secret pet-health values even outside combat. The old readable-number path safely hid the icon, but this made it ineffective in the reported client state. For a living pet with unreadable health, build a step curve at the configured health fraction, pass it to `UnitHealthPercent("pet", true, curve)`, and pass the resulting alpha directly to the icon frame. Never compare or stringify a secret alpha. The icon is visually hidden above the threshold and red below it. Keep the frame unprotected and the existing readable-number path for the warning and optional percentage. Secret values cannot drive a Lua warning latch, so restricted mode is visual only; `/haf` reports that state. Hide for absent or dead pets, loading, and missing/failed percent or curve APIs. Cache the curve until the threshold changes. Verify curve semantics and icon appearance in the Forever client.

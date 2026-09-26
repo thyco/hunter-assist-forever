@@ -1,10 +1,10 @@
 # Hunter Assist Forever
 
-A hunter-only equipped ammunition indicator for WoW Forever (interface 16001). Version 0.6.2 includes ammo, pet health and happiness indicators, and the Mongoose Bite / Counterattack glow. Range tinting has been removed.
+A hunter-only equipped ammunition indicator for WoW Forever (interface 16001). Version 0.6.3 includes ammo, pet health and happiness indicators, and the Mongoose Bite / Counterattack glow. Range tinting has been removed.
 
 ## Install
 
-Replace the existing `Interface/AddOns/HunterAssistForever` folder with the folder in `dist/HunterAssistForever-0.6.2.zip`, then reload the UI. Existing ammo settings are retained. Existing reactive glow settings are retained too; obsolete range settings are ignored.
+Replace the existing `Interface/AddOns/HunterAssistForever` folder with the folder in `dist/HunterAssistForever-0.6.3.zip`, then reload the UI. Existing ammo settings are retained. Existing reactive glow settings are retained too; obsolete range settings are ignored.
 
 Open **Settings → AddOns → Hunter Assist Forever**, or type `/haf config`.
 
@@ -47,7 +47,7 @@ The separate **Pet settings** section controls two pet icons. The low-health ico
 
 The separate **pet happiness icon** is hidden when happy, yellow when content, and red when unhappy. Enable it with **Enable pet happiness icon** (on by default). **Move happiness icon** lets you place it independently of the health icon; it starts to the right of the health icon. Happiness uses Forever's `C_PetInfo.GetPetHappiness` API and updates from pet events, with no polling loop. Missing, dead, or unreadable pet data hides it.
 
-When health first falls to or below its threshold, or happiness first becomes unhappy, a local raid-style warning appears with a gentle whisper chime. Each alert fires once until the pet recovers; content stays visual only. If both alerts occur together, both messages appear with one chime. No raid chat message is sent. The icons hide for absent/dead pets, loading screens, and unavailable/restricted values. They update from pet events without a polling loop and work in and out of combat when readable data is available.
+When readable health first falls to or below its threshold, or happiness first becomes unhappy, a local raid-style warning appears with a gentle whisper chime. Each alert fires once until the pet recovers; content stays visual only. If both alerts occur together, both messages appear with one chime. No raid chat message is sent. When Forever restricts pet health, a client-side percentage curve can still make the red icon visible below the threshold without exposing the value to the addon. In that visual-only mode, the health percentage and low-health sound warning are unavailable. The icons hide for absent or dead pets and during loading; an unavailable happiness value hides its icon. Pet events update both icons without a polling loop.
 
 ## Diagnostics and development
 
@@ -63,7 +63,7 @@ The addon follows the module/packaging structure of `paladin-assist-forever` and
 - Compare the count with the equipped ammo slot, including in combat.
 - Verify threshold colors, the optional count, Move icon, and the local warning below the threshold.
 - Confirm the happiness icon is hidden when happy, yellow when content, and red when unhappy. Feed your pet or let its happiness change; verify the icon updates without a reload. Test moving it independently.
-- Check that low health and unhappy each show a local warning with a gentle chime once per episode, while content stays quiet. Confirm the low-ammo warning still uses its original sound.
+- Check that readable low health and unhappy each show a local warning with a gentle chime once per episode, while content stays quiet. When `/haf` reports pet health as visual only, check that the red health icon still follows the threshold; no low-health sound is expected in that mode. Confirm the low-ammo warning still uses its original sound.
 - Verify no range coloring remains after reloading and the selected reactive button still glows after a dodge when Mongoose Bite is usable and off cooldown.
 
 ## API reference

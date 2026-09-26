@@ -57,6 +57,7 @@ function Pet:Refresh()
 
     self.sample = nil
     self.status = "no living pet or health unavailable"
+    local alpha, alphaAvailable
     local exists = addon.Client.Boolean(read(UnitExists, "pet"))
     local dead = exists == true and addon.Client.Boolean(read(UnitIsDeadOrGhost, "pet"))
     if exists == true and dead == false then
@@ -65,12 +66,17 @@ function Pet:Refresh()
         if positive(health) and positive(maximum) and health <= maximum then
             self.sample = { health = health, maximum = maximum, percent = (health / maximum) * 100 }
             self.status = "pet health"
+        else
+            alpha, alphaAvailable = addon.PetHealthIcon:RestrictedAlpha()
+            if alphaAvailable then
+                self.status = "pet health visual only (restricted value)"
+            end
         end
     elseif exists == false or dead == true then
         self.warned = false
     end
 
-    addon.PetHealthIcon:Set(self.sample, true)
+    addon.PetHealthIcon:Set(self.sample, true, alpha, alphaAvailable)
     if self.sample then
         local low = self.sample.health * 100 <= self.sample.maximum * addon.Config.Get("petHealthThreshold")
         if low and not self.warned then

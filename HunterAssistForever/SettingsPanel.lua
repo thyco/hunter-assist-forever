@@ -64,7 +64,7 @@ function panel:Initialize()
     self.sections = { ammo, reactive, pet }
 
     checkbox(pet, "petHealthEnabled", "Enable low pet health icon", -62,
-        "Show a red icon at or below the threshold, with one local warning and gentle chime.")
+        "Show a red icon at or below the threshold. A local warning and chime need readable pet health.")
     checkbox(pet, "petShowPercent", "Show health percentage", -96,
         "Display the pet's current health percentage on the red icon.")
     widgets.Text(pet, "Happiness", 20, -238, "GameFontNormal")
