@@ -121,7 +121,7 @@ function Icon:Render()
         return
     end
 
-    self.texture:SetTexture("Interface\\Icons\\Ability_Hunter_BeastCall")
+    self.texture:SetTexture("Interface\\Icons\\Ability_Hunter_MendPet")
     self.texture:SetVertexColor(1, 0.2, 0.2)
     if self.restrictedAlphaAvailable and not self.preview then
         self.frame:SetAlpha(self.restrictedAlpha)

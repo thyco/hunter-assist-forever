@@ -1,10 +1,10 @@
 # Hunter Assist Forever
 
-A hunter-only equipped ammunition indicator for WoW Forever (interface 16001). Version 0.6.3 includes ammo, pet health and happiness indicators, and the Mongoose Bite / Counterattack glow. Range tinting has been removed.
+A hunter-only equipped ammunition indicator for WoW Forever (interface 16001). Version 0.6.4 includes ammo, pet health and happiness indicators, and the Mongoose Bite / Counterattack glow. Range tinting has been removed.
 
 ## Install
 
-Replace the existing `Interface/AddOns/HunterAssistForever` folder with the folder in `dist/HunterAssistForever-0.6.3.zip`, then reload the UI. Existing ammo settings are retained. Existing reactive glow settings are retained too; obsolete range settings are ignored.
+Replace the existing `Interface/AddOns/HunterAssistForever` folder with the folder in `dist/HunterAssistForever-0.6.4.zip`, then reload the UI. Existing ammo settings are retained. Existing reactive glow settings are retained too; obsolete range settings are ignored.
 
 Open **Settings → AddOns → Hunter Assist Forever**, or type `/haf config`.
 
