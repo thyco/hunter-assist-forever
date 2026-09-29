@@ -67,3 +67,9 @@ Forever can return secret pet-health values even outside combat. The old readabl
 ## Pet health default threshold (0.6.5)
 
 New installs use 35% as the pet-health threshold. Existing saved thresholds remain unchanged. The icon visibility and warning use the same configured threshold as before.
+
+## Aspect reminder (0.7.0)
+
+Show a movable 64×64 icon in combat when the player's Aspect of the Cheetah (5118) or Aspect of the Pack (13159) aura is present. Use the matching spell artwork. Hide outside combat, during loading, and when neither aura is present. Two independent settings enable the icon check and its native Blizzard proc glow; both default on. The glow can be disabled without hiding the icon. Movement preview is available in settings even outside combat. Position is saved separately from ammo and pet icons.
+
+Use `C_UnitAuras.GetPlayerAuraBySpellID` with the fixed spell IDs on player aura and combat events. Ignore restricted or failed API results, and avoid polling. Prepare the glow frame outside combat through the existing LibCustomGlow service. Preserve all ammo, pet and reactive behavior, and verify aspect aura visibility and glow size in the Forever client.

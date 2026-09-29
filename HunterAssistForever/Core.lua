@@ -1,6 +1,6 @@
 local addonName, addon = ...
 addon.name = addonName
-addon.version = "0.6.5"
+addon.version = "0.7.0"
 addon.features = {}
 addon.started = false
 addon.running = false

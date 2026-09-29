@@ -38,5 +38,11 @@ SlashCmdList.HUNTERASSISTFOREVER = function(message)
         .. " | " .. (addon.PetHealth.status or "not checked"))
     addon.PetHappiness:Refresh()
     print("Pet happiness: " .. (addon.PetHappiness.status or "not checked"))
-    print("/haf config to configure ammo, pet and reactive glow settings.")
+    addon.AspectWarning:Refresh()
+    local aspect = addon.AspectWarning.spellID == 5118 and "Cheetah"
+        or (addon.AspectWarning.spellID == 13159 and "Pack" or "none")
+    print("Aspect reminder: " .. (addon.Config.Get("aspectCheckEnabled") and "enabled" or "disabled")
+        .. " | in combat: " .. tostring(addon.AspectWarning.inCombat == true)
+        .. " | active: " .. aspect)
+    print("/haf config to configure ammo, pet, reactive glow and aspect settings.")
 end

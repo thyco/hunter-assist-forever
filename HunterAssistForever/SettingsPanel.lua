@@ -50,7 +50,7 @@ function panel:Initialize()
     scroll:SetPoint("TOPLEFT", canvas, "TOPLEFT", 0, -8)
     scroll:SetPoint("BOTTOMRIGHT", canvas, "BOTTOMRIGHT", -28, 8)
     local content = CreateFrame("Frame", nil, scroll)
-    content:SetSize(580, 1130)
+    content:SetSize(580, 1320)
     scroll:SetScrollChild(content)
     scroll:SetScript("OnSizeChanged", function(_, width)
         content:SetWidth(math.max(1, width))
@@ -61,7 +61,22 @@ function panel:Initialize()
     local reactive = widgets.Section(content, "Mongoose Bite / Counterattack",
         "Combat only · either learned spell usable and off cooldown", -444, 210)
     local pet = widgets.Section(content, "Pet settings", "Pet health and happiness alerts", -670, 430)
-    self.sections = { ammo, reactive, pet }
+    local aspect = widgets.Section(content, "Aspect reminder", "Combat only · Cheetah or Pack active", -1116, 170)
+    self.sections = { ammo, reactive, pet, aspect }
+
+    checkbox(aspect, "aspectCheckEnabled", "Show active Cheetah / Pack icon", -62,
+        "Show a larger icon during combat while Aspect of the Cheetah or Aspect of the Pack is active.")
+    checkbox(aspect, "aspectGlowEnabled", "Glow around aspect icon", -96,
+        "Use Blizzard's native proc glow around the aspect icon.")
+    local moveAspect = CreateFrame("Button", nil, aspect, "UIPanelButtonTemplate")
+    moveAspect:SetPoint("TOPLEFT", aspect, "TOPLEFT", 20, -128)
+    moveAspect:SetSize(140, 28)
+    moveAspect:SetText("Move icon")
+    moveAspect:SetScript("OnClick", function()
+        addon.AspectIcon:SetPreview(true)
+    end)
+    widgets.Tooltip(moveAspect, "Show the aspect icon and drag it. Close settings to save the position.")
+    self.moveAspectButton = moveAspect
 
     checkbox(pet, "petHealthEnabled", "Enable low pet health icon", -62,
         "Show a red icon at or below the threshold. A local warning and chime need readable pet health.")
@@ -151,6 +166,7 @@ function panel:Initialize()
         addon.AmmoIcon:SetPreview(false)
         addon.PetHealthIcon:SetPreview(false)
         addon.PetHappinessIcon:SetPreview(false)
+        addon.AspectIcon:SetPreview(false)
     end)
     addon.Config.Subscribe(function()
         self:Refresh()

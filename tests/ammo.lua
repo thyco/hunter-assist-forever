@@ -280,7 +280,7 @@ test('upgrade keeps ammo and reactive preferences but removes range checks', fun
             reactiveBar = 5, reactiveButton = 7, ammoShowCount = true, ammoX = 25, ammoY = -100 }
     end)
 
-    equal(#addon.features, 4)
+    equal(#addon.features, 5)
     equal(addon.Range, nil)
     assert(addon.ReactiveGlow)
     equal(addon.Config.Get('reactiveBar'), 5)
@@ -289,7 +289,7 @@ test('upgrade keeps ammo and reactive preferences but removes range checks', fun
     equal(addon.Config.Get('ammoX'), 25)
     equal(addon.SettingsPanel.controls.deadzoneSaturation, nil)
     assert(addon.SettingsPanel.controls.reactiveGlowEnabled)
-    equal(#addon.SettingsPanel.sections, 3)
+    equal(#addon.SettingsPanel.sections, 4)
     for _, frame in ipairs(world.frames) do
         equal(frame.scripts.OnUpdate, nil)
         equal(frame.events.PLAYER_TARGET_CHANGED, nil)

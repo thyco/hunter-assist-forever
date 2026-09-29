@@ -1,10 +1,10 @@
 # Hunter Assist Forever
 
-A hunter-only equipped ammunition indicator for WoW Forever (interface 16001). Version 0.6.5 includes ammo, pet health and happiness indicators, and the Mongoose Bite / Counterattack glow. Range tinting has been removed.
+A hunter-only helper for WoW Forever (interface 16001). Version 0.7.0 includes ammo, pet health and happiness indicators, a combat reminder for Aspect of the Cheetah / Pack, and the Mongoose Bite / Counterattack glow. Range tinting has been removed.
 
 ## Install
 
-Replace the existing `Interface/AddOns/HunterAssistForever` folder with the folder in `dist/HunterAssistForever-0.6.5.zip`, then reload the UI. Existing ammo settings are retained. Existing reactive glow settings are retained too; obsolete range settings are ignored.
+Replace the existing `Interface/AddOns/HunterAssistForever` folder with the folder in `dist/HunterAssistForever-0.7.0.zip`, then reload the UI. Existing settings are retained; obsolete range settings are ignored.
 
 Open **Settings → AddOns → Hunter Assist Forever**, or type `/haf config`.
 
@@ -36,6 +36,12 @@ In combat, that button glows when either learned spell is reported usable by `C_
 
 The bundled LibCustomGlow renderer uses Blizzard's native proc artwork/colors. The glow clears when readiness ends, the selected button is hidden, the feature is disabled, or combat ends. Settings changes release the old button immediately. Buttons are prepared outside combat; newly created buttons encountered in combat wait until combat ends. Spell/cooldown events refresh immediately, with a 0.1-second fallback update only while in combat with an enabled selected button.
 
+## Aspect reminder
+
+The **Aspect reminder** settings group has two independent checkboxes: **Show active Cheetah / Pack icon** and **Glow around aspect icon**. Both are on by default. In combat, a 64×64 icon appears while your Aspect of the Cheetah or Aspect of the Pack buff is active, using that aspect's artwork. It hides when the buff ends, combat ends, the feature is disabled, or the world is loading. The glow uses Blizzard's native proc artwork/colors and can be disabled while keeping the icon. There is no sound or raid warning.
+
+Select **Move icon** to preview and drag it. The preview can show outside combat; closing settings returns it to combat-only behavior. The icon starts below the center of the screen and saves its position account-wide. Player aura and combat events drive updates, without a new polling loop. If Forever marks the aura data as restricted, the reminder hides rather than guessing its state. A glow may wait until the next combat if the UI was reloaded during combat, because its frame must be prepared outside combat.
+
 ## Pet settings
 
 The separate **Pet settings** section controls two pet icons. The low-health icon is red when active:
@@ -51,21 +57,22 @@ When readable health first falls to or below its threshold, or happiness first b
 
 ## Diagnostics and development
 
-`/haf` prints the client version and current ammo, pet health and pet happiness status. No spell range APIs or deadzone tint hooks are used. The reactive glow retains its combat-only readiness updates.
+`/haf` prints the client version and current ammo, pet and aspect status. No spell range APIs or deadzone tint hooks are used. The reactive glow retains its combat-only readiness updates.
 
-Run `lua tests/ammo.lua`, `lua tests/reactive.lua`, `lua tests/glow_integration.lua`, `lua tests/pet.lua` and `python3 scripts/package.py`. Tests cover thresholds, warning rearming, restricted values, settings, moving the icon, class gating and upgrading with old saved settings. Real-client verification is still needed for visual layout and API behavior.
+Run `lua tests/ammo.lua`, `lua tests/reactive.lua`, `lua tests/glow_integration.lua`, `lua tests/pet.lua`, `lua tests/aspect.lua` and `python3 scripts/package.py`. Tests cover thresholds, warning rearming, restricted values, settings, moving the icons, class gating and upgrading with old saved settings. Real-client verification is still needed for visual layout and API behavior.
 
 The addon follows the module/packaging structure of `paladin-assist-forever` and includes the supplied hunter icon.
 
 ## In-game acceptance
 
-- Confirm Ammo check, Mongoose Bite / Counterattack and Pet settings appear in settings and your saved count/position/cutoffs remain intact.
+- Confirm Ammo check, Mongoose Bite / Counterattack, Pet settings and Aspect reminder appear in settings and your saved count/position/cutoffs remain intact.
 - Compare the count with the equipped ammo slot, including in combat.
 - Verify threshold colors, the optional count, Move icon, and the local warning below the threshold.
 - Confirm the happiness icon is hidden when happy, yellow when content, and red when unhappy. Feed your pet or let its happiness change; verify the icon updates without a reload. Test moving it independently.
 - Check that readable low health and unhappy each show a local warning with a gentle chime once per episode, while content stays quiet. When `/haf` reports pet health as visual only, check that the red health icon still follows the threshold; no low-health sound is expected in that mode. Confirm the low-ammo warning still uses its original sound.
 - Verify no range coloring remains after reloading and the selected reactive button still glows after a dodge when Mongoose Bite is usable and off cooldown.
+- Activate Cheetah or Pack out of combat: the aspect icon should stay hidden. Enter combat: the larger matching icon and glow should appear. Cancel or change the aspect: the icon should clear or change. Turn off only the glow checkbox: the icon should remain. Try Move icon to place it.
 
 ## API reference
 
-The equipped count follows the [Forever character panel](https://github.com/Gethe/wow-ui-source/blob/forever/Interface/AddOns/Blizzard_UIPanels_Game/Camelot/PaperDollFrame.lua). Pet happiness uses the [Forever pet API](https://github.com/Gethe/wow-ui-source/blob/forever/Interface/AddOns/Blizzard_APIDocumentationGenerated/PetInfoDocumentation.lua).
+The equipped count follows the [Forever character panel](https://github.com/Gethe/wow-ui-source/blob/forever/Interface/AddOns/Blizzard_UIPanels_Game/Camelot/PaperDollFrame.lua). Pet happiness uses the [Forever pet API](https://github.com/Gethe/wow-ui-source/blob/forever/Interface/AddOns/Blizzard_APIDocumentationGenerated/PetInfoDocumentation.lua). The aspect reminder uses the [Forever player aura API](https://github.com/Gethe/wow-ui-source/blob/forever/Interface/AddOns/Blizzard_APIDocumentationGenerated/UnitAuraDocumentation.lua) and [spell texture API](https://github.com/Gethe/wow-ui-source/blob/forever/Interface/AddOns/Blizzard_APIDocumentationGenerated/SpellDocumentation.lua).
