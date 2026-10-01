@@ -34,6 +34,7 @@ function Pet:Initialize()
         if event == "PLAYER_LEAVING_WORLD" then
             self.worldReady = false
             self.inCombat = false
+            addon.PetWarning.SetPreview(false)
             self:Stop()
             return
         elseif event == "PLAYER_ENTERING_WORLD" then

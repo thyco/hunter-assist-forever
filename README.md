@@ -1,10 +1,10 @@
 # Hunter Assist Forever
 
-A hunter-only helper for WoW Forever (interface 16001). Version 0.8.2 includes ammo, pet health and happiness indicators, a combat reminder for Aspect of the Cheetah / Pack, and the Mongoose Bite / Counterattack glow. Range tinting has been removed.
+A hunter-only helper for WoW Forever (interface 16001). Version 0.8.3 includes ammo, pet health and happiness indicators, a combat reminder for Aspect of the Cheetah / Pack, and the Mongoose Bite / Counterattack glow. Range tinting has been removed.
 
 ## Install
 
-Replace the existing `Interface/AddOns/HunterAssistForever` folder with the folder in `dist/HunterAssistForever-0.8.2.zip`, then reload the UI. Existing settings are retained; obsolete range settings are ignored.
+Replace the existing `Interface/AddOns/HunterAssistForever` folder with the folder in `dist/HunterAssistForever-0.8.3.zip`, then reload the UI. Existing settings are retained; obsolete range settings are ignored.
 
 Open **Settings → AddOns → Hunter Assist Forever**, or type `/haf config`.
 
@@ -51,6 +51,7 @@ The separate **Pet settings** section controls two pet icons. The low-health ico
 - **Show health percentage** is off by default.
 - **Flash screen at low pet health** is on by default. In combat, a translucent edge effect pulses while the pet is at or below the same threshold, leaving the center of the screen clear. Turn it off if you prefer the icon and warning text alone.
 - **Flash color** opens WoW's color picker. The default is amber; your selected color is saved and applies immediately without changing the pulse timing or strength.
+- **Test pulse** previews the edge effect at its normal intensity, even with a healthy pet or outside combat. Click again or close settings to stop it. The preview never sends a warning or plays a sound.
 - **Move icon** shows a red preview; drag it and close settings to save its position. Its initial position is beside the ammo icon.
 
 The separate **pet happiness icon** is hidden when happy, yellow when content, and red when unhappy. Enable it with **Enable pet happiness icon** (on by default). **Move happiness icon** lets you place it independently of the health icon; it starts to the right of the health icon. Happiness uses Forever's `C_PetInfo.GetPetHappiness` API and updates from pet events, with no polling loop. Missing, dead, or unreadable pet data hides it.
@@ -71,6 +72,7 @@ The addon follows the module/packaging structure of `paladin-assist-forever` and
 - Compare the count with the equipped ammo slot, including in combat.
 - Verify threshold colors, the optional count, Move icon, and the local warning below the threshold.
 - Confirm the happiness icon is hidden when happy, yellow when content, and red when unhappy. Feed your pet or let its happiness change; verify the icon updates without a reload. Test moving it independently.
+- In Pet settings, click **Test pulse** with a healthy pet and confirm the colored edges appear and the center stays clear. Click it again or close settings to stop it. If the preview is invisible, report that before testing the health trigger.
 - Check that the low-health icon can appear out of combat while its warning text, chime and screen-edge pulse wait until combat begins. On combat exit, the text and pulse should hide while the icon remains if the pet is still low. An unhappy pet continues to warn out of combat. When `/haf` reports pet health as visual only, check that the red icon follows the threshold and, in combat, the centered **Pet health low!** text and edge pulse do too; no low-health sound is expected in that mode. Choose another **Flash color** while the pulse is visible and confirm it changes immediately; canceling the picker should restore the old color. Turn off **Flash screen at low pet health** and confirm the icon and text remain. Confirm the low-ammo warning still uses its original sound.
 - Verify no range coloring remains after reloading and the selected reactive button still glows after a dodge when Mongoose Bite is usable and off cooldown.
 - Activate Cheetah or Pack out of combat: the aspect icon should stay hidden. Enter combat: the larger matching icon and glow should appear. Cancel or change the aspect: the icon should clear or change. Turn off only the glow checkbox: the icon should remain. Try Move icon to place it.

@@ -102,7 +102,7 @@ test('exact threshold shows red and one local warning', function()
     equal(addon.PetWarning.flashTint.color[1], 1)
     equal(addon.PetWarning.flashTint.color[2], 166 / 255)
     equal(addon.PetWarning.flashTint.color[3], 13 / 255)
-    equal(addon.PetWarning.flashTint.color[4], 0.24)
+    equal(addon.PetWarning.flashTint.color[4], 0.8)
 end)
 
 test('low health icon remains visible out of combat while warning and edge pulse wait', function()
@@ -344,6 +344,59 @@ test('screen flash checkbox disables only the flash', function()
     equal(addon.Config.Get('petFlashEnabled'), false)
     equal(addon.PetWarning.flashFrame.shown, false)
     equal(addon.PetHealthIcon.frame.shown, true)
+end)
+
+test('test pulse button previews the edge effect without a low pet or combat', function()
+    local world, addon = setup(1000)
+    local button = addon.SettingsPanel.testFlashButton
+
+    equal(addon.PetWarning.flashFrame.shown, false)
+    button.scripts.OnClick(button)
+
+    equal(addon.PetWarning.flashFrame.shown, true)
+    equal(addon.PetWarning.flashFrame.alpha, 1)
+    equal(addon.PetWarning.flashAnimation:IsPlaying(), true)
+    equal(button.text, 'Stop pulse')
+    equal(addon.PetWarning.visualFrame.shown, false)
+    equal(#world.petWarnings, 0)
+    equal(#world.petSounds, 0)
+
+    button.scripts.OnClick(button)
+
+    equal(addon.PetWarning.flashFrame.shown, false)
+    equal(addon.PetWarning.flashAnimation:IsPlaying(), false)
+    equal(button.text, 'Test pulse')
+end)
+
+test('closing settings stops the pulse preview and keeps the saved color', function()
+    local _, addon = setup(1000)
+    local button = addon.SettingsPanel.testFlashButton
+    addon.Config.Set('petFlashEnabled', false)
+    addon.Config.Set('petFlashColor', 'ff0080ff')
+
+    button.scripts.OnClick(button)
+    equal(addon.PetWarning.flashFrame.shown, true)
+    equal(addon.PetWarning.flashTint.color[2], 128 / 255)
+
+    addon.SettingsPanel.canvas:Hide()
+
+    equal(addon.PetWarning.flashFrame.shown, false)
+    equal(addon.PetWarning.flashAnimation:IsPlaying(), false)
+    equal(button.text, 'Test pulse')
+    equal(addon.Config.Get('petFlashColor'), 'ff0080ff')
+end)
+
+test('loading cancels a pulse preview and resets the test button label', function()
+    local world, addon = setup(1000)
+    local button = addon.SettingsPanel.testFlashButton
+    button.scripts.OnClick(button)
+
+    world:fire('PLAYER_LEAVING_WORLD')
+    addon.SettingsPanel.canvas:Show()
+
+    equal(addon.PetWarning.preview, false)
+    equal(addon.PetWarning.flashFrame.shown, false)
+    equal(button.text, 'Test pulse')
 end)
 
 test('threshold and percentage settings apply immediately', function()

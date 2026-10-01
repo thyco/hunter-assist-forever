@@ -89,3 +89,7 @@ Add a native color swatch in Pet settings for the screen flash. Store the RGB ch
 ## Pet-health edge pulse and combat gating (0.8.2)
 
 Replace the solid full-screen tint with WoW's low-health edge texture, desaturated and tinted through the existing color setting, using additive blending. Keep the existing pulse animation and threshold gate, including the restricted-health alpha path. The pet-health icon remains visible whenever health is low, including out of combat. The screen-edge pulse, centered restricted-health text, and readable-health local warning and chime appear only in combat. On combat exit, hide the pulse and text without clearing the icon or rearming the warning; if health was low before combat, warn upon combat entry. Keep pet-happiness warnings unchanged.
+
+## Edge pulse visibility and preview (0.8.3)
+
+The user saw the pet icon and warning text in combat but no colored edges, isolating the symptom to edge rendering. The previous vertex alpha was 0.24, carried over from a solid full-screen overlay; that is likely too faint for the sparse additive edge texture. Raise edge opacity to 0.8. Add a Test pulse button beside the color picker, which temporarily shows the actual edge pulse regardless of pet health, combat or the flash checkbox, without warning text or sound. A second click, closing settings or leaving the world stops the preview. Keep the configured color and the normal combat/health gating unchanged outside the preview. Confirm visual intensity in the Forever client.

@@ -69,8 +69,27 @@ function Warning.ApplyFlashColor()
     end
 
     local red, green, blue = addon.Config.GetColor("petFlashColor")
-    Warning.flashTint:SetVertexColor(red, green, blue, 0.24)
+    Warning.flashTint:SetVertexColor(red, green, blue, 0.8)
     Warning.flashColor = color
+end
+
+function Warning.SetPreview(enabled)
+    if not Warning.flashFrame then
+        return false
+    end
+
+    if not enabled and not Warning.preview then
+        return false
+    end
+
+    Warning.preview = enabled == true
+    if Warning.preview or not addon.PetHealth.worldReady then
+        Warning.SetLowHealthFlash(false, nil, false)
+    else
+        addon.PetHealth:Refresh()
+    end
+
+    return Warning.preview
 end
 
 function Warning.SetLowHealthVisual(alpha, available)
@@ -94,7 +113,8 @@ function Warning.SetLowHealthFlash(low, alpha, available)
         return
     end
 
-    if not addon.Config.Get("petFlashEnabled") or (not low and not available) then
+    local preview = Warning.preview == true
+    if not preview and (not addon.Config.Get("petFlashEnabled") or (not low and not available)) then
         if Warning.flashAnimation:IsPlaying() then
             Warning.flashAnimation:Stop()
         end
@@ -103,7 +123,7 @@ function Warning.SetLowHealthFlash(low, alpha, available)
         return
     end
 
-    frame:SetAlpha(available and alpha or 1)
+    frame:SetAlpha(preview and 1 or (available and alpha or 1))
     frame:Show()
     if not Warning.flashAnimation:IsPlaying() then
         Warning.flashAnimation:Play()
