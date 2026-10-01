@@ -3,7 +3,7 @@
 ## IconTexture: Interface\AddOns\HunterAssistForever\Media\Hunter.tga
 ## Notes: Ammo, pet and active movement-aspect indicators, plus reactive ability glow.
 ## Author: Hunter Assist Forever
-## Version: 0.7.0
+## Version: 0.7.1
 ## OptionalDeps: LibCustomGlow-1.0
 ## SavedVariables: HunterAssistForeverDB
 

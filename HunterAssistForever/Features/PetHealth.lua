@@ -20,6 +20,8 @@ end
 
 function Pet:Initialize()
     addon.PetHealthIcon:Initialize()
+    addon.PetWarning.Initialize()
+
     local frame = CreateFrame("Frame")
     self.frame = frame
     for _, event in ipairs({ "UNIT_HEALTH", "UNIT_MAXHEALTH", "UNIT_FLAGS", "UNIT_PET",
@@ -77,6 +79,7 @@ function Pet:Refresh()
     end
 
     addon.PetHealthIcon:Set(self.sample, true, alpha, alphaAvailable)
+    addon.PetWarning.SetLowHealthVisual(alpha, alphaAvailable)
     if self.sample then
         local low = self.sample.health * 100 <= self.sample.maximum * addon.Config.Get("petHealthThreshold")
         if low and not self.warned then
@@ -97,4 +100,5 @@ function Pet:Stop()
     self.sample = nil
     self.status = "disabled or loading"
     addon.PetHealthIcon:Set(nil, false)
+    addon.PetWarning.SetLowHealthVisual(nil, false)
 end

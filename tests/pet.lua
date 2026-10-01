@@ -89,6 +89,7 @@ test('exact threshold shows red and one local warning', function()
     equal(addon.PetHealthIcon.countText.shown, false)
     equal(#world.petWarnings, 1)
     equal(#world.petSounds, 1)
+    equal(addon.PetWarning.visualFrame.shown, false)
 end)
 
 test('healing above threshold hides the icon', function()
@@ -157,6 +158,9 @@ test('restricted pet health still drives low-health icon through a client curve'
     equal(addon.PetHealthIcon.frame.shown, true)
     equal(addon.PetHealthIcon.frame.alpha, 1)
     equal(addon.PetHealthIcon.countText.shown, false)
+    equal(addon.PetWarning.visualFrame.shown, true)
+    equal(addon.PetWarning.visualFrame.alpha, 1)
+    equal(addon.PetWarning.visualText.text, 'Pet health low!')
     equal(#world.petWarnings, 0)
 
     world.petFraction = 0.35
@@ -166,6 +170,7 @@ test('restricted pet health still drives low-health icon through a client curve'
     world.petFraction = 0.36
     world:fire('UNIT_HEALTH', 'pet')
     equal(addon.PetHealthIcon.frame.alpha, 0)
+    equal(addon.PetWarning.visualFrame.alpha, 0)
 
     world.petFraction = 0.8
     world:fire('UNIT_HEALTH', 'pet')
@@ -173,6 +178,10 @@ test('restricted pet health still drives low-health icon through a client curve'
 
     addon.Config.Set('petHealthThreshold', 90)
     equal(addon.PetHealthIcon.frame.alpha, 1)
+    equal(addon.PetWarning.visualFrame.alpha, 1)
+
+    addon.Config.Set('petHealthEnabled', false)
+    equal(addon.PetWarning.visualFrame.shown, false)
 end)
 
 test('secret health-curve alpha reaches the icon without Lua comparison', function()
@@ -187,6 +196,7 @@ test('secret health-curve alpha reaches the icon without Lua comparison', functi
 
     equal(addon.PetHealthIcon.frame.shown, true)
     equal(rawequal(addon.PetHealthIcon.frame.alpha, world.secret), true)
+    equal(rawequal(addon.PetWarning.visualFrame.alpha, world.secret), true)
     equal(#world.petWarnings, 0)
 end)
 
