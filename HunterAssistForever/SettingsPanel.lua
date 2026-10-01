@@ -84,11 +84,11 @@ function panel:Initialize()
     self.moveAspectButton = moveAspect
 
     checkbox(pet, "petHealthEnabled", "Enable low pet health icon", -62,
-        "Show a red icon and warning at or below the threshold. A one-time chime needs readable pet health.")
+        "Show a red icon at or below the threshold, including out of combat. The warning and chime occur in combat only.")
     checkbox(pet, "petShowPercent", "Show health percentage", -96,
         "Display the pet's current health percentage on the red icon.")
     checkbox(pet, "petFlashEnabled", "Flash screen at low pet health", -130,
-        "Pulse a translucent screen tint while your pet is at or below the health threshold.")
+        "Pulse the screen edges in combat while your pet is at or below the health threshold.")
     color(pet, "petFlashColor", "Flash color", -168,
         "Choose the color of the low-health screen flash. Amber is the default.")
     widgets.Text(pet, "Happiness", 20, -310, "GameFontNormal")

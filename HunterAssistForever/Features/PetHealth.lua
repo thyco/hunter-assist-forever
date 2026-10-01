@@ -1,5 +1,5 @@
 local _, addon = ...
-local Pet = { settingKey = "petHealthEnabled", eventDriven = true, worldReady = false }
+local Pet = { settingKey = "petHealthEnabled", eventDriven = true, worldReady = false, inCombat = false }
 addon.PetHealth = Pet
 addon:RegisterFeature(Pet)
 
@@ -25,18 +25,25 @@ function Pet:Initialize()
     local frame = CreateFrame("Frame")
     self.frame = frame
     for _, event in ipairs({ "UNIT_HEALTH", "UNIT_MAXHEALTH", "UNIT_FLAGS", "UNIT_PET",
-        "PLAYER_ENTERING_WORLD", "PLAYER_LEAVING_WORLD", "PLAYER_REGEN_ENABLED" }) do
+        "PLAYER_ENTERING_WORLD", "PLAYER_LEAVING_WORLD",
+        "PLAYER_REGEN_DISABLED", "PLAYER_REGEN_ENABLED" }) do
         frame:RegisterEvent(event)
     end
 
     frame:SetScript("OnEvent", function(_, event, unit)
         if event == "PLAYER_LEAVING_WORLD" then
             self.worldReady = false
+            self.inCombat = false
             self:Stop()
             return
         elseif event == "PLAYER_ENTERING_WORLD" then
             self.worldReady = true
+            self.inCombat = addon.Client.Boolean(read(UnitAffectingCombat, "player")) == true
             self.warned = false
+        elseif event == "PLAYER_REGEN_DISABLED" then
+            self.inCombat = true
+        elseif event == "PLAYER_REGEN_ENABLED" then
+            self.inCombat = false
         elseif event == "UNIT_PET" then
             if not addon.Client.Readable(unit) or unit ~= "player" then
                 return
@@ -82,10 +89,16 @@ function Pet:Refresh()
         <= self.sample.maximum * addon.Config.Get("petHealthThreshold")
 
     addon.PetHealthIcon:Set(self.sample, true, alpha, alphaAvailable)
-    addon.PetWarning.SetLowHealthVisual(alpha, alphaAvailable)
-    addon.PetWarning.SetLowHealthFlash(low, alpha, alphaAvailable)
+    if self.inCombat then
+        addon.PetWarning.SetLowHealthVisual(alpha, alphaAvailable)
+        addon.PetWarning.SetLowHealthFlash(low, alpha, alphaAvailable)
+    else
+        addon.PetWarning.SetLowHealthVisual(nil, false)
+        addon.PetWarning.SetLowHealthFlash(false, nil, false)
+    end
+
     if self.sample then
-        if low and not self.warned then
+        if low and self.inCombat and not self.warned then
             addon.PetWarning.Show("Pet health low!")
             self.warned = true
         elseif not low then

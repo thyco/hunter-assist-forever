@@ -1,10 +1,10 @@
 # Hunter Assist Forever
 
-A hunter-only helper for WoW Forever (interface 16001). Version 0.8.1 includes ammo, pet health and happiness indicators, a combat reminder for Aspect of the Cheetah / Pack, and the Mongoose Bite / Counterattack glow. Range tinting has been removed.
+A hunter-only helper for WoW Forever (interface 16001). Version 0.8.2 includes ammo, pet health and happiness indicators, a combat reminder for Aspect of the Cheetah / Pack, and the Mongoose Bite / Counterattack glow. Range tinting has been removed.
 
 ## Install
 
-Replace the existing `Interface/AddOns/HunterAssistForever` folder with the folder in `dist/HunterAssistForever-0.8.1.zip`, then reload the UI. Existing settings are retained; obsolete range settings are ignored.
+Replace the existing `Interface/AddOns/HunterAssistForever` folder with the folder in `dist/HunterAssistForever-0.8.2.zip`, then reload the UI. Existing settings are retained; obsolete range settings are ignored.
 
 Open **Settings → AddOns → Hunter Assist Forever**, or type `/haf config`.
 
@@ -47,15 +47,15 @@ Select **Move icon** to preview and drag it. The preview can show outside combat
 The separate **Pet settings** section controls two pet icons. The low-health icon is red when active:
 
 - **Enable low pet health icon** is on by default.
-- **Health threshold (%)** defaults to 35 and accepts whole percentages from 1 to 100. The icon appears at or below the threshold and hides above it.
+- **Health threshold (%)** defaults to 35 and accepts whole percentages from 1 to 100. The icon appears at or below the threshold, including out of combat, and hides above it.
 - **Show health percentage** is off by default.
-- **Flash screen at low pet health** is on by default. A translucent screen tint pulses while the pet is at or below the same threshold, distinct from WoW's red player-health flash; turn it off if you prefer the icon and text alone.
+- **Flash screen at low pet health** is on by default. In combat, a translucent edge effect pulses while the pet is at or below the same threshold, leaving the center of the screen clear. Turn it off if you prefer the icon and warning text alone.
 - **Flash color** opens WoW's color picker. The default is amber; your selected color is saved and applies immediately without changing the pulse timing or strength.
 - **Move icon** shows a red preview; drag it and close settings to save its position. Its initial position is beside the ammo icon.
 
 The separate **pet happiness icon** is hidden when happy, yellow when content, and red when unhappy. Enable it with **Enable pet happiness icon** (on by default). **Move happiness icon** lets you place it independently of the health icon; it starts to the right of the health icon. Happiness uses Forever's `C_PetInfo.GetPetHappiness` API and updates from pet events, with no polling loop. Missing, dead, or unreadable pet data hides it.
 
-When readable health first falls to or below its threshold, or happiness first becomes unhappy, a local raid-style warning appears with a gentle whisper chime. Each alert fires once until the pet recovers; content stays visual only. If both alerts occur together, both messages appear with one chime. No raid chat message is sent. When Forever restricts pet health, a client-side percentage curve drives the red icon, a large centered **Pet health low!** warning, and the optional screen flash. The text and flash stay visible while health is low and disappear above the threshold. Restricted values cannot trigger a one-time `RaidNotice_AddMessage` or sound because Lua cannot detect the threshold crossing; the health percentage is also unavailable. The indicators hide for absent or dead pets and during loading; an unavailable happiness value hides its icon. Pet events update them without a Lua polling loop; the screen pulse uses a client animation.
+When readable pet health first falls to or below its threshold during combat, a local raid-style warning appears with a gentle whisper chime. If the pet is already low when combat begins, the warning appears then. It fires once until the pet recovers; leaving and re-entering combat does not repeat it for the same low-health episode. Happiness warnings remain independent: an unhappy pet shows its local warning and chime even out of combat, while content stays visual only. If both alerts occur together, both messages appear with one chime. No raid chat message is sent. When Forever restricts pet health, a client-side percentage curve drives the red icon, and in combat also drives a large centered **Pet health low!** warning and the optional screen-edge pulse. The text and pulse hide on combat exit or recovery. Restricted values cannot trigger a one-time `RaidNotice_AddMessage` or sound because Lua cannot detect the threshold crossing; the health percentage is also unavailable. The indicators hide for absent or dead pets and during loading; an unavailable happiness value hides its icon. Pet events update them without a Lua polling loop; the screen pulse uses a client animation.
 
 ## Diagnostics and development
 
@@ -71,7 +71,7 @@ The addon follows the module/packaging structure of `paladin-assist-forever` and
 - Compare the count with the equipped ammo slot, including in combat.
 - Verify threshold colors, the optional count, Move icon, and the local warning below the threshold.
 - Confirm the happiness icon is hidden when happy, yellow when content, and red when unhappy. Feed your pet or let its happiness change; verify the icon updates without a reload. Test moving it independently.
-- Check that readable low health and unhappy each show a local warning with a gentle chime once per episode, while content stays quiet. When `/haf` reports pet health as visual only, check that the red icon, centered **Pet health low!** text and translucent screen pulse follow the threshold; no low-health sound is expected in that mode. Choose another **Flash color** while the pulse is visible and confirm it changes immediately; canceling the picker should restore the old color. Turn off **Flash screen at low pet health** and confirm the icon and text remain. Confirm the low-ammo warning still uses its original sound.
+- Check that the low-health icon can appear out of combat while its warning text, chime and screen-edge pulse wait until combat begins. On combat exit, the text and pulse should hide while the icon remains if the pet is still low. An unhappy pet continues to warn out of combat. When `/haf` reports pet health as visual only, check that the red icon follows the threshold and, in combat, the centered **Pet health low!** text and edge pulse do too; no low-health sound is expected in that mode. Choose another **Flash color** while the pulse is visible and confirm it changes immediately; canceling the picker should restore the old color. Turn off **Flash screen at low pet health** and confirm the icon and text remain. Confirm the low-ammo warning still uses its original sound.
 - Verify no range coloring remains after reloading and the selected reactive button still glows after a dodge when Mongoose Bite is usable and off cooldown.
 - Activate Cheetah or Pack out of combat: the aspect icon should stay hidden. Enter combat: the larger matching icon and glow should appear. Cancel or change the aspect: the icon should clear or change. Turn off only the glow checkbox: the icon should remain. Try Move icon to place it.
 

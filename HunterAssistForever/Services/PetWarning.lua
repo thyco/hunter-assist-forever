@@ -34,6 +34,9 @@ function Warning.Initialize()
     pulse:EnableMouse(false)
     local tint = pulse:CreateTexture(nil, "BACKGROUND")
     tint:SetAllPoints(pulse)
+    tint:SetTexture("Interface\\FullScreenTextures\\LowHealth")
+    tint:SetBlendMode("ADD")
+    tint:SetDesaturated(true)
 
     local animation = pulse:CreateAnimationGroup()
     animation:SetLooping("REPEAT")
@@ -66,7 +69,7 @@ function Warning.ApplyFlashColor()
     end
 
     local red, green, blue = addon.Config.GetColor("petFlashColor")
-    Warning.flashTint:SetColorTexture(red, green, blue, 0.24)
+    Warning.flashTint:SetVertexColor(red, green, blue, 0.24)
     Warning.flashColor = color
 end
 

@@ -20,6 +20,7 @@ local function setup(health, configure)
     world.petWarnings, world.petSounds, world.now = {}, {}, 100
     world.env.UnitExists = function(unit) equal(unit, 'pet'); return world.petExists end
     world.env.UnitIsDeadOrGhost = function(unit) equal(unit, 'pet'); return world.petDead end
+    world.env.UnitAffectingCombat = function(unit) equal(unit, 'player'); return world.combat end
     world.env.UnitHealth = function(unit)
         equal(unit, 'pet')
         world.petReads = world.petReads + 1
@@ -81,7 +82,7 @@ test('healthy pet icon is hidden', function()
 end)
 
 test('exact threshold shows red and one local warning', function()
-    local world, addon = setup(350)
+    local world, addon = setup(350, function(w) w.combat = true end)
 
     equal(addon.PetHealthIcon.frame.shown, true)
     equal(addon.PetHealthIcon.texture.color[1], 1)
@@ -94,10 +95,42 @@ test('exact threshold shows red and one local warning', function()
     equal(addon.PetWarning.flashFrame.alpha, 1)
     equal(addon.PetWarning.flashAnimation:IsPlaying(), true)
     equal(addon.Config.Get('petFlashColor'), 'ffffa60d')
-    equal(addon.PetWarning.flashTint.colorTexture[1], 1)
-    equal(addon.PetWarning.flashTint.colorTexture[2], 166 / 255)
-    equal(addon.PetWarning.flashTint.colorTexture[3], 13 / 255)
-    equal(addon.PetWarning.flashTint.colorTexture[4], 0.24)
+    equal(addon.PetWarning.flashTint.texture, 'Interface\\FullScreenTextures\\LowHealth')
+    equal(addon.PetWarning.flashTint.blendMode, 'ADD')
+    equal(addon.PetWarning.flashTint.desaturation, 1)
+    equal(addon.PetWarning.flashTint.colorTexture, nil)
+    equal(addon.PetWarning.flashTint.color[1], 1)
+    equal(addon.PetWarning.flashTint.color[2], 166 / 255)
+    equal(addon.PetWarning.flashTint.color[3], 13 / 255)
+    equal(addon.PetWarning.flashTint.color[4], 0.24)
+end)
+
+test('low health icon remains visible out of combat while warning and edge pulse wait', function()
+    local world, addon = setup(200)
+
+    equal(addon.PetHealthIcon.frame.shown, true)
+    equal(addon.PetWarning.visualFrame.shown, false)
+    equal(addon.PetWarning.flashFrame.shown, false)
+    equal(#world.petWarnings, 0)
+    equal(#world.petSounds, 0)
+
+    world.combat = true
+    world:fire('PLAYER_REGEN_DISABLED')
+
+    equal(addon.PetHealthIcon.frame.shown, true)
+    equal(addon.PetWarning.flashFrame.shown, true)
+    equal(#world.petWarnings, 1)
+    equal(#world.petSounds, 1)
+
+    world.combat = false
+    world:fire('PLAYER_REGEN_ENABLED')
+
+    equal(addon.PetHealthIcon.frame.shown, true)
+    equal(addon.PetWarning.flashFrame.shown, false)
+
+    world.combat = true
+    world:fire('PLAYER_REGEN_DISABLED')
+    equal(#world.petWarnings, 1)
 end)
 
 test('saved flash color is restored and invalid colors fall back to amber', function()
@@ -106,21 +139,21 @@ test('saved flash color is restored and invalid colors fall back to amber', func
     end)
 
     equal(addon.Config.Get('petFlashColor'), 'ff2050e0')
-    equal(addon.PetWarning.flashTint.colorTexture[1], 32 / 255)
-    equal(addon.PetWarning.flashTint.colorTexture[2], 80 / 255)
-    equal(addon.PetWarning.flashTint.colorTexture[3], 224 / 255)
+    equal(addon.PetWarning.flashTint.color[1], 32 / 255)
+    equal(addon.PetWarning.flashTint.color[2], 80 / 255)
+    equal(addon.PetWarning.flashTint.color[3], 224 / 255)
 
     local _, invalid = setup(200, function(world)
         world.env.HunterAssistForeverDB = { petFlashColor = 'not-a-color' }
     end)
 
     equal(invalid.Config.Get('petFlashColor'), 'ffffa60d')
-    equal(invalid.PetWarning.flashTint.colorTexture[2], 166 / 255)
+    equal(invalid.PetWarning.flashTint.color[2], 166 / 255)
     equal(invalid.Config.CanSet('petFlashColor', 'bad'), false)
 end)
 
 test('flash color picker updates the active tint and cancel restores it', function()
-    local world, addon = setup(200)
+    local world, addon = setup(200, function(w) w.combat = true end)
     local swatch = addon.SettingsPanel.controls.petFlashColor
     local animation = addon.PetWarning.flashAnimation
     local healthReads = world.petReads
@@ -136,9 +169,9 @@ test('flash color picker updates the active tint and cancel restores it', functi
     picker.swatchFunc()
 
     equal(addon.Config.Get('petFlashColor'), 'ff0080ff')
-    equal(addon.PetWarning.flashTint.colorTexture[1], 0)
-    equal(addon.PetWarning.flashTint.colorTexture[2], 128 / 255)
-    equal(addon.PetWarning.flashTint.colorTexture[3], 1)
+    equal(addon.PetWarning.flashTint.color[1], 0)
+    equal(addon.PetWarning.flashTint.color[2], 128 / 255)
+    equal(addon.PetWarning.flashTint.color[3], 1)
     equal(addon.PetWarning.flashAnimation, animation)
     equal(animation:IsPlaying(), true)
     equal(world.petReads, healthReads)
@@ -146,12 +179,12 @@ test('flash color picker updates the active tint and cancel restores it', functi
     picker.cancelFunc()
 
     equal(addon.Config.Get('petFlashColor'), 'ffffa60d')
-    equal(addon.PetWarning.flashTint.colorTexture[2], 166 / 255)
+    equal(addon.PetWarning.flashTint.color[2], 166 / 255)
     equal(animation:IsPlaying(), true)
 end)
 
 test('healing above threshold hides the icon', function()
-    local world, addon = setup(200)
+    local world, addon = setup(200, function(w) w.combat = true end)
     world.petHealth = 500
 
     world:fire('UNIT_HEALTH', 'pet')
@@ -193,6 +226,7 @@ end)
 
 test('restricted pet health still drives low-health icon through a client curve', function()
     local world, addon = setup(1000, function(w)
+        w.combat = true
         w.petHealth = w.secret
         w.petFraction = 0.2
         w.env.Enum.LuaCurveType = { Step = 1 }
@@ -252,6 +286,7 @@ end)
 
 test('secret health-curve alpha reaches the icon without Lua comparison', function()
     local world, addon = setup(1000, function(w)
+        w.combat = true
         w.petHealth = w.secret
         w.env.Enum.LuaCurveType = { Step = 1 }
         w.env.C_CurveUtil = { CreateCurve = function()
@@ -267,8 +302,38 @@ test('secret health-curve alpha reaches the icon without Lua comparison', functi
     equal(#world.petWarnings, 0)
 end)
 
+test('restricted low-health text and pulse follow combat while the icon remains', function()
+    local world, addon = setup(1000, function(w)
+        w.petHealth = w.secret
+        w.env.Enum.LuaCurveType = { Step = 1 }
+        w.env.C_CurveUtil = { CreateCurve = function()
+            return { SetType = function() end, AddPoint = function() end }
+        end }
+        w.env.UnitHealthPercent = function() return w.secret end
+    end)
+
+    equal(addon.PetHealthIcon.frame.shown, true)
+    equal(addon.PetWarning.visualFrame.shown, false)
+    equal(addon.PetWarning.flashFrame.shown, false)
+
+    world.combat = true
+    world:fire('PLAYER_REGEN_DISABLED')
+
+    equal(addon.PetWarning.visualFrame.shown, true)
+    equal(rawequal(addon.PetWarning.visualFrame.alpha, world.secret), true)
+    equal(addon.PetWarning.flashFrame.shown, true)
+    equal(rawequal(addon.PetWarning.flashFrame.alpha, world.secret), true)
+
+    world.combat = false
+    world:fire('PLAYER_REGEN_ENABLED')
+
+    equal(addon.PetHealthIcon.frame.shown, true)
+    equal(addon.PetWarning.visualFrame.shown, false)
+    equal(addon.PetWarning.flashFrame.shown, false)
+end)
+
 test('screen flash checkbox disables only the flash', function()
-    local _, addon = setup(200)
+    local _, addon = setup(200, function(w) w.combat = true end)
     local checkbox = addon.SettingsPanel.controls.petFlashEnabled
     equal(addon.Config.Get('petFlashEnabled'), true)
     equal(addon.PetWarning.flashFrame.shown, true)
@@ -513,7 +578,7 @@ test('loading hides the happiness icon and restores its current state', function
 end)
 
 test('low pet health warns once and rearms after recovery', function()
-    local world = setup(600)
+    local world = setup(600, function(w) w.combat = true end)
     equal(#world.petWarnings, 0)
 
     world.petHealth = 250
@@ -558,7 +623,7 @@ test('content stays visual only; unhappy warns once per episode', function()
 end)
 
 test('simultaneous pet alerts show both texts with one gentle chime', function()
-    local world = setup(1000, function(w) w.happiness = 1 end)
+    local world = setup(1000, function(w) w.happiness = 1; w.combat = true end)
     world.petHealth = 200
 
     world:fire('UNIT_HEALTH', 'pet')

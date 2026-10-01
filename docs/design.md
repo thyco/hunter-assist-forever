@@ -85,3 +85,7 @@ Add a default-on checkbox in Pet settings for a translucent amber full-screen pu
 ## Configurable pet-health flash color (0.8.1)
 
 Add a native color swatch in Pet settings for the screen flash. Store the RGB choice as an opaque eight-digit hex value, with the existing amber shade as the default. Apply picker changes immediately and restore the previous color on cancel. Color changes only update the tint texture; the threshold-gating parent alpha and client pulse animation stay unchanged, including for restricted health values. Reject malformed saved values and use the default instead.
+
+## Pet-health edge pulse and combat gating (0.8.2)
+
+Replace the solid full-screen tint with WoW's low-health edge texture, desaturated and tinted through the existing color setting, using additive blending. Keep the existing pulse animation and threshold gate, including the restricted-health alpha path. The pet-health icon remains visible whenever health is low, including out of combat. The screen-edge pulse, centered restricted-health text, and readable-health local warning and chime appear only in combat. On combat exit, hide the pulse and text without clearing the icon or rearming the warning; if health was low before combat, warn upon combat entry. Keep pet-happiness warnings unchanged.
