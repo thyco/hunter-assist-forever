@@ -144,3 +144,48 @@ function Widgets.Dropdown(parent, label, y, setting, options, tooltip)
     end
     return dropdown
 end
+
+function Widgets.Color(parent, label, y, setting, tooltip)
+    Widgets.Text(parent, label, 20, y - 5, "GameFontHighlight")
+    local swatch = CreateFrame("Button", nil, parent, "BackdropTemplate")
+    swatch:SetPoint("TOPLEFT", parent, "TOPLEFT", 266, y)
+    swatch:SetSize(26, 24)
+    swatch:SetBackdrop({ edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = 1 })
+    swatch:SetBackdropBorderColor(0.7, 0.7, 0.7, 1)
+    local fill = swatch:CreateTexture(nil, "ARTWORK")
+    fill:SetPoint("TOPLEFT", swatch, "TOPLEFT", 3, -3)
+    fill:SetPoint("BOTTOMRIGHT", swatch, "BOTTOMRIGHT", -3, 3)
+    Widgets.Text(parent, "Click to change", 302, y - 6)
+
+    local function rgb()
+        local hex = setting:GetValue()
+        return tonumber(hex:sub(3, 4), 16) / 255,
+            tonumber(hex:sub(5, 6), 16) / 255,
+            tonumber(hex:sub(7, 8), 16) / 255
+    end
+
+    swatch.refresh = function()
+        local red, green, blue = rgb()
+        fill:SetColorTexture(red, green, blue, 1)
+    end
+    swatch:SetScript("OnClick", function()
+        local previous = setting:GetValue()
+        local red, green, blue = rgb()
+        ColorPickerFrame:SetupColorPickerAndShow({
+            r = red, g = green, b = blue, hasOpacity = false,
+            swatchFunc = function()
+                local selectedRed, selectedGreen, selectedBlue = ColorPickerFrame:GetColorRGB()
+                setting:SetValue(string.format("ff%02x%02x%02x",
+                    math.floor(selectedRed * 255 + 0.5),
+                    math.floor(selectedGreen * 255 + 0.5),
+                    math.floor(selectedBlue * 255 + 0.5)))
+            end,
+            cancelFunc = function()
+                setting:SetValue(previous)
+            end,
+        })
+    end)
+    Widgets.Tooltip(swatch, tooltip)
+
+    return swatch
+end

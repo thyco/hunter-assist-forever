@@ -78,10 +78,13 @@ function Pet:Refresh()
         self.warned = false
     end
 
+    local low = self.sample and self.sample.health * 100
+        <= self.sample.maximum * addon.Config.Get("petHealthThreshold")
+
     addon.PetHealthIcon:Set(self.sample, true, alpha, alphaAvailable)
     addon.PetWarning.SetLowHealthVisual(alpha, alphaAvailable)
+    addon.PetWarning.SetLowHealthFlash(low, alpha, alphaAvailable)
     if self.sample then
-        local low = self.sample.health * 100 <= self.sample.maximum * addon.Config.Get("petHealthThreshold")
         if low and not self.warned then
             addon.PetWarning.Show("Pet health low!")
             self.warned = true
@@ -93,6 +96,7 @@ end
 
 function Pet:ApplySettings()
     addon.PetHealthIcon:ApplySettings()
+    addon.PetWarning.ApplyFlashColor()
     self:Refresh()
 end
 
@@ -101,4 +105,5 @@ function Pet:Stop()
     self.status = "disabled or loading"
     addon.PetHealthIcon:Set(nil, false)
     addon.PetWarning.SetLowHealthVisual(nil, false)
+    addon.PetWarning.SetLowHealthFlash(false, nil, false)
 end

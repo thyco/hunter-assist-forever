@@ -90,6 +90,64 @@ test('exact threshold shows red and one local warning', function()
     equal(#world.petWarnings, 1)
     equal(#world.petSounds, 1)
     equal(addon.PetWarning.visualFrame.shown, false)
+    equal(addon.PetWarning.flashFrame.shown, true)
+    equal(addon.PetWarning.flashFrame.alpha, 1)
+    equal(addon.PetWarning.flashAnimation:IsPlaying(), true)
+    equal(addon.Config.Get('petFlashColor'), 'ffffa60d')
+    equal(addon.PetWarning.flashTint.colorTexture[1], 1)
+    equal(addon.PetWarning.flashTint.colorTexture[2], 166 / 255)
+    equal(addon.PetWarning.flashTint.colorTexture[3], 13 / 255)
+    equal(addon.PetWarning.flashTint.colorTexture[4], 0.24)
+end)
+
+test('saved flash color is restored and invalid colors fall back to amber', function()
+    local _, addon = setup(200, function(world)
+        world.env.HunterAssistForeverDB = { petFlashColor = 'ff2050e0' }
+    end)
+
+    equal(addon.Config.Get('petFlashColor'), 'ff2050e0')
+    equal(addon.PetWarning.flashTint.colorTexture[1], 32 / 255)
+    equal(addon.PetWarning.flashTint.colorTexture[2], 80 / 255)
+    equal(addon.PetWarning.flashTint.colorTexture[3], 224 / 255)
+
+    local _, invalid = setup(200, function(world)
+        world.env.HunterAssistForeverDB = { petFlashColor = 'not-a-color' }
+    end)
+
+    equal(invalid.Config.Get('petFlashColor'), 'ffffa60d')
+    equal(invalid.PetWarning.flashTint.colorTexture[2], 166 / 255)
+    equal(invalid.Config.CanSet('petFlashColor', 'bad'), false)
+end)
+
+test('flash color picker updates the active tint and cancel restores it', function()
+    local world, addon = setup(200)
+    local swatch = addon.SettingsPanel.controls.petFlashColor
+    local animation = addon.PetWarning.flashAnimation
+    local healthReads = world.petReads
+
+    swatch.scripts.OnClick(swatch)
+    local picker = world.env.ColorPickerFrame.options
+    equal(picker.hasOpacity, false)
+    equal(picker.r, 1)
+    equal(picker.g, 166 / 255)
+    equal(picker.b, 13 / 255)
+
+    world.pickerColor = { 0, 0.5, 1 }
+    picker.swatchFunc()
+
+    equal(addon.Config.Get('petFlashColor'), 'ff0080ff')
+    equal(addon.PetWarning.flashTint.colorTexture[1], 0)
+    equal(addon.PetWarning.flashTint.colorTexture[2], 128 / 255)
+    equal(addon.PetWarning.flashTint.colorTexture[3], 1)
+    equal(addon.PetWarning.flashAnimation, animation)
+    equal(animation:IsPlaying(), true)
+    equal(world.petReads, healthReads)
+
+    picker.cancelFunc()
+
+    equal(addon.Config.Get('petFlashColor'), 'ffffa60d')
+    equal(addon.PetWarning.flashTint.colorTexture[2], 166 / 255)
+    equal(animation:IsPlaying(), true)
 end)
 
 test('healing above threshold hides the icon', function()
@@ -99,6 +157,8 @@ test('healing above threshold hides the icon', function()
     world:fire('UNIT_HEALTH', 'pet')
 
     equal(addon.PetHealthIcon.frame.shown, false)
+    equal(addon.PetWarning.flashFrame.shown, false)
+    equal(addon.PetWarning.flashAnimation:IsPlaying(), false)
 end)
 
 test('max health changes update the threshold calculation', function()
@@ -161,6 +221,8 @@ test('restricted pet health still drives low-health icon through a client curve'
     equal(addon.PetWarning.visualFrame.shown, true)
     equal(addon.PetWarning.visualFrame.alpha, 1)
     equal(addon.PetWarning.visualText.text, 'Pet health low!')
+    equal(addon.PetWarning.flashFrame.shown, true)
+    equal(addon.PetWarning.flashFrame.alpha, 1)
     equal(#world.petWarnings, 0)
 
     world.petFraction = 0.35
@@ -171,6 +233,8 @@ test('restricted pet health still drives low-health icon through a client curve'
     world:fire('UNIT_HEALTH', 'pet')
     equal(addon.PetHealthIcon.frame.alpha, 0)
     equal(addon.PetWarning.visualFrame.alpha, 0)
+    equal(addon.PetWarning.flashFrame.alpha, 0)
+    equal(addon.PetWarning.flashAnimation:IsPlaying(), true)
 
     world.petFraction = 0.8
     world:fire('UNIT_HEALTH', 'pet')
@@ -179,9 +243,11 @@ test('restricted pet health still drives low-health icon through a client curve'
     addon.Config.Set('petHealthThreshold', 90)
     equal(addon.PetHealthIcon.frame.alpha, 1)
     equal(addon.PetWarning.visualFrame.alpha, 1)
+    equal(addon.PetWarning.flashFrame.alpha, 1)
 
     addon.Config.Set('petHealthEnabled', false)
     equal(addon.PetWarning.visualFrame.shown, false)
+    equal(addon.PetWarning.flashFrame.shown, false)
 end)
 
 test('secret health-curve alpha reaches the icon without Lua comparison', function()
@@ -197,7 +263,22 @@ test('secret health-curve alpha reaches the icon without Lua comparison', functi
     equal(addon.PetHealthIcon.frame.shown, true)
     equal(rawequal(addon.PetHealthIcon.frame.alpha, world.secret), true)
     equal(rawequal(addon.PetWarning.visualFrame.alpha, world.secret), true)
+    equal(rawequal(addon.PetWarning.flashFrame.alpha, world.secret), true)
     equal(#world.petWarnings, 0)
+end)
+
+test('screen flash checkbox disables only the flash', function()
+    local _, addon = setup(200)
+    local checkbox = addon.SettingsPanel.controls.petFlashEnabled
+    equal(addon.Config.Get('petFlashEnabled'), true)
+    equal(addon.PetWarning.flashFrame.shown, true)
+
+    checkbox:SetChecked(false)
+    checkbox.scripts.OnClick(checkbox)
+
+    equal(addon.Config.Get('petFlashEnabled'), false)
+    equal(addon.PetWarning.flashFrame.shown, false)
+    equal(addon.PetHealthIcon.frame.shown, true)
 end)
 
 test('threshold and percentage settings apply immediately', function()

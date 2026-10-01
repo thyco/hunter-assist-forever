@@ -77,3 +77,11 @@ Use `C_UnitAuras.GetPlayerAuraBySpellID` with the fixed spell IDs on player aura
 ## Restricted pet-health warning (0.7.1)
 
 The restricted-health curve already controls the pet icon's alpha. Reuse its returned alpha for a separate, noninteractive, centered raid-style text warning. Show the frame while restricted data and the curve are available, and pass the possibly secret alpha directly to `SetAlpha` without comparing it in Lua. This makes **Pet health low!** visible continuously at or below the configured threshold and transparent above it. Hide it for readable health, disabled settings, missing or dead pets, and loading. Keep the existing one-time `RaidNotice_AddMessage` and gentle chime for readable health; a secret threshold transition cannot trigger those Lua side effects. Verify the visual placement and alpha behavior in the Forever client.
+
+## Pet-health screen flash (0.8.0)
+
+Add a default-on checkbox in Pet settings for a translucent amber full-screen pulse at or below the existing pet-health threshold, visually distinct from WoW's red player-health flash. Reuse the readable low-health boolean or, for restricted values, the same client-side curve alpha already driving the icon and centered text. Keep the secret alpha on an unprotected parent frame and animate a child frame so animation never replaces the threshold gate. A looping client animation provides the pulse without a Lua per-frame update. Stop and hide the flash on recovery, disabled settings, missing or dead pets, and loading. Preserve the existing warning and sound behavior.
+
+## Configurable pet-health flash color (0.8.1)
+
+Add a native color swatch in Pet settings for the screen flash. Store the RGB choice as an opaque eight-digit hex value, with the existing amber shade as the default. Apply picker changes immediately and restore the previous color on cancel. Color changes only update the tint texture; the threshold-gating parent alpha and client pulse animation stay unchanged, including for restricted health values. Reject malformed saved values and use the default instead.

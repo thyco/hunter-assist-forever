@@ -23,6 +23,51 @@ function Warning.Initialize()
     frame:Hide()
     Warning.visualFrame = frame
     Warning.visualText = text
+
+    local flash = CreateFrame("Frame", "HunterAssistForeverPetHealthFlash", UIParent)
+    flash:SetAllPoints(UIParent)
+    flash:SetFrameStrata("MEDIUM")
+    flash:EnableMouse(false)
+
+    local pulse = CreateFrame("Frame", nil, flash)
+    pulse:SetAllPoints(flash)
+    pulse:EnableMouse(false)
+    local tint = pulse:CreateTexture(nil, "BACKGROUND")
+    tint:SetAllPoints(pulse)
+
+    local animation = pulse:CreateAnimationGroup()
+    animation:SetLooping("REPEAT")
+    local brighten = animation:CreateAnimation("Alpha")
+    brighten:SetOrder(1)
+    brighten:SetFromAlpha(0.1)
+    brighten:SetToAlpha(1)
+    brighten:SetDuration(0.45)
+    local dim = animation:CreateAnimation("Alpha")
+    dim:SetOrder(2)
+    dim:SetFromAlpha(1)
+    dim:SetToAlpha(0.1)
+    dim:SetDuration(0.55)
+
+    flash:Hide()
+    Warning.flashFrame = flash
+    Warning.flashTint = tint
+    Warning.flashAnimation = animation
+    Warning.ApplyFlashColor()
+end
+
+function Warning.ApplyFlashColor()
+    if not Warning.flashTint then
+        return
+    end
+
+    local color = addon.Config.Get("petFlashColor")
+    if Warning.flashColor == color then
+        return
+    end
+
+    local red, green, blue = addon.Config.GetColor("petFlashColor")
+    Warning.flashTint:SetColorTexture(red, green, blue, 0.24)
+    Warning.flashColor = color
 end
 
 function Warning.SetLowHealthVisual(alpha, available)
@@ -37,6 +82,28 @@ function Warning.SetLowHealthVisual(alpha, available)
     else
         frame:Hide()
         frame:SetAlpha(1)
+    end
+end
+
+function Warning.SetLowHealthFlash(low, alpha, available)
+    local frame = Warning.flashFrame
+    if not frame then
+        return
+    end
+
+    if not addon.Config.Get("petFlashEnabled") or (not low and not available) then
+        if Warning.flashAnimation:IsPlaying() then
+            Warning.flashAnimation:Stop()
+        end
+        frame:Hide()
+        frame:SetAlpha(1)
+        return
+    end
+
+    frame:SetAlpha(available and alpha or 1)
+    frame:Show()
+    if not Warning.flashAnimation:IsPlaying() then
+        Warning.flashAnimation:Play()
     end
 end
 

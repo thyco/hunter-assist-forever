@@ -123,6 +123,7 @@ function Helpers.new()
         function value:CreateFontString() return frame('FontString', nil, self) end
         function value:CreateTexture() return frame('Texture', nil, self) end
         function value:SetTexture(texture) self.texture = texture end
+        function value:SetColorTexture(...) self.colorTexture = { ... } end
         function value:SetTexCoord(...) self.texCoord = { ... } end
         function value:SetAllPoints() end
         function value:SetScrollChild(child) self.scrollChild = child end
@@ -148,6 +149,23 @@ function Helpers.new()
         function value:SetDesaturation(amount) self.desaturation = amount; self.writes = self.writes + 1 end
         function value:GetDesaturation() return self.desaturation end
         function value:IsDesaturated() return self.desaturation == 1 end
+        function value:CreateAnimationGroup()
+            local group = { animations = {}, playing = false }
+            function group:SetLooping(looping) self.looping = looping end
+            function group:CreateAnimation(kind)
+                local animation = { kind = kind }
+                function animation:SetOrder(order) self.order = order end
+                function animation:SetDuration(duration) self.duration = duration end
+                function animation:SetFromAlpha(alpha) self.fromAlpha = alpha end
+                function animation:SetToAlpha(alpha) self.toAlpha = alpha end
+                self.animations[#self.animations + 1] = animation
+                return animation
+            end
+            function group:Play() self.playing = true end
+            function group:Stop() self.playing = false end
+            function group:IsPlaying() return self.playing end
+            return group
+        end
 
         if template == 'UICheckButtonTemplate' then value.Text = frame('FontString', nil, value) end
         if name then env[name] = value end
@@ -178,14 +196,22 @@ function Helpers.new()
     env.UIDropDownMenu_SetText = function(dropdown, text) dropdown.text = text end
     env.UIDropDownMenu_CreateInfo = function() return {} end
     env.UIDropDownMenu_AddButton = function(info) world.lastMenuOption = info end
+    env.ColorPickerFrame = {
+        SetupColorPickerAndShow = function(self, options) self.options = options end,
+        GetColorRGB = function()
+            local color = world.pickerColor or { 1, 0, 0 }
+            return color[1], color[2], color[3]
+        end,
+    }
     env.Settings = {
-        VarType = { Boolean = 'boolean', Number = 'number' },
+        VarType = { Boolean = 'boolean', Number = 'number', String = 'string' },
         RegisterCanvasLayoutCategory = function(canvas, name)
             world.category = { canvas = canvas, name = name, GetID = function() return 123 end }
             return world.category
         end,
         RegisterProxySetting = function(category, variable, valueType, name, default, getter, setter)
-            assert(category == world.category and (valueType == 'boolean' or valueType == 'number'))
+            assert(category == world.category and (valueType == 'boolean' or valueType == 'number'
+                or valueType == 'string'))
             world.setting = { GetValue = function() return getter() end, SetValue = function(_, value) setter(value) end }
             return world.setting
         end,

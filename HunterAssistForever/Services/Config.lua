@@ -19,6 +19,8 @@ local defaults = {
     petHappinessX = 100,
     petHappinessY = -180,
     petHealthEnabled = true,
+    petFlashEnabled = true,
+    petFlashColor = "ffffa60d",
     petHealthThreshold = 35,
     petShowPercent = false,
     petX = 50,
@@ -31,6 +33,10 @@ local thresholds = { "ammoHideAbove", "ammoYellowAt", "ammoRedAt", "ammoWarnBelo
 local function valid(key, value)
     if type(value) ~= type(defaults[key]) then
         return false
+    end
+
+    if key == "petFlashColor" then
+        return #value == 8 and value:match("^%x+$") ~= nil
     end
 
     if type(value) == "number" then
@@ -71,6 +77,8 @@ function Config.Initialize()
     for key, default in pairs(defaults) do
         if not valid(key, values[key]) then
             values[key] = default
+        elseif key == "petFlashColor" then
+            values[key] = "ff" .. values[key]:sub(3):lower()
         end
     end
 
@@ -93,6 +101,13 @@ function Config.Get(key)
     return defaults[key]
 end
 
+function Config.GetColor(key)
+    local hex = Config.Get(key)
+    return tonumber(hex:sub(3, 4), 16) / 255,
+        tonumber(hex:sub(5, 6), 16) / 255,
+        tonumber(hex:sub(7, 8), 16) / 255
+end
+
 function Config.CanSet(key, value)
     return defaults[key] ~= nil and valid(key, value) and ordered(function(candidate)
         if candidate == key then
@@ -107,6 +122,10 @@ function Config.Set(key, value)
     assert(Config.CanSet(key, value), "Invalid configuration value: " .. key)
     if not values then
         Config.Initialize()
+    end
+
+    if key == "petFlashColor" then
+        value = "ff" .. value:sub(3):lower()
     end
 
     if values[key] == value then

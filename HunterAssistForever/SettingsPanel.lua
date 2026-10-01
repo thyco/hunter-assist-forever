@@ -13,7 +13,8 @@ local function setting(key, label)
         }
     end
 
-    local valueType = type(default) == "boolean" and Settings.VarType.Boolean or Settings.VarType.Number
+    local valueType = type(default) == "boolean" and Settings.VarType.Boolean
+        or (type(default) == "string" and Settings.VarType.String or Settings.VarType.Number)
     return Settings.RegisterProxySetting(panel.category, "HunterAssistForever_" .. key, valueType,
         label, default, function()
             return addon.Config.Get(key)
@@ -24,6 +25,10 @@ end
 
 local function checkbox(section, key, label, y, tooltip)
     panel.controls[key] = addon.SettingsWidgets.Checkbox(section, label, y, setting(key, label), tooltip)
+end
+
+local function color(section, key, label, y, tooltip)
+    panel.controls[key] = addon.SettingsWidgets.Color(section, label, y, setting(key, label), tooltip)
 end
 
 function panel:Refresh()
@@ -50,7 +55,7 @@ function panel:Initialize()
     scroll:SetPoint("TOPLEFT", canvas, "TOPLEFT", 0, -8)
     scroll:SetPoint("BOTTOMRIGHT", canvas, "BOTTOMRIGHT", -28, 8)
     local content = CreateFrame("Frame", nil, scroll)
-    content:SetSize(580, 1320)
+    content:SetSize(580, 1396)
     scroll:SetScrollChild(content)
     scroll:SetScript("OnSizeChanged", function(_, width)
         content:SetWidth(math.max(1, width))
@@ -60,8 +65,8 @@ function panel:Initialize()
     local ammo = widgets.Section(content, "Ammo check", "Equipped ammunition · local low-ammo warning", -48, 380)
     local reactive = widgets.Section(content, "Mongoose Bite / Counterattack",
         "Combat only · either learned spell usable and off cooldown", -444, 210)
-    local pet = widgets.Section(content, "Pet settings", "Pet health and happiness alerts", -670, 430)
-    local aspect = widgets.Section(content, "Aspect reminder", "Combat only · Cheetah or Pack active", -1116, 170)
+    local pet = widgets.Section(content, "Pet settings", "Pet health and happiness alerts", -670, 506)
+    local aspect = widgets.Section(content, "Aspect reminder", "Combat only · Cheetah or Pack active", -1192, 170)
     self.sections = { ammo, reactive, pet, aspect }
 
     checkbox(aspect, "aspectCheckEnabled", "Show active Cheetah / Pack icon", -62,
@@ -79,14 +84,18 @@ function panel:Initialize()
     self.moveAspectButton = moveAspect
 
     checkbox(pet, "petHealthEnabled", "Enable low pet health icon", -62,
-        "Show a red icon at or below the threshold. A local warning and chime need readable pet health.")
+        "Show a red icon and warning at or below the threshold. A one-time chime needs readable pet health.")
     checkbox(pet, "petShowPercent", "Show health percentage", -96,
         "Display the pet's current health percentage on the red icon.")
-    widgets.Text(pet, "Happiness", 20, -238, "GameFontNormal")
-    checkbox(pet, "petHappinessEnabled", "Enable pet happiness icon", -270,
+    checkbox(pet, "petFlashEnabled", "Flash screen at low pet health", -130,
+        "Pulse a translucent screen tint while your pet is at or below the health threshold.")
+    color(pet, "petFlashColor", "Flash color", -168,
+        "Choose the color of the low-health screen flash. Amber is the default.")
+    widgets.Text(pet, "Happiness", 20, -310, "GameFontNormal")
+    checkbox(pet, "petHappinessEnabled", "Enable pet happiness icon", -342,
         "Show yellow when content and red when unhappy, with one local warning and gentle chime. Hidden when happy.")
     local moveHappiness = CreateFrame("Button", nil, pet, "UIPanelButtonTemplate")
-    moveHappiness:SetPoint("TOPLEFT", pet, "TOPLEFT", 20, -314)
+    moveHappiness:SetPoint("TOPLEFT", pet, "TOPLEFT", 20, -386)
     moveHappiness:SetSize(180, 28)
     moveHappiness:SetText("Move happiness icon")
     moveHappiness:SetScript("OnClick", function()
@@ -95,14 +104,14 @@ function panel:Initialize()
     widgets.Tooltip(moveHappiness, "Show the happiness icon and drag it. Close settings to save the position.")
     self.moveHappinessButton = moveHappiness
 
-    local petFeedback = widgets.Text(pet, "", 20, -380)
+    local petFeedback = widgets.Text(pet, "", 20, -452)
     petFeedback:SetTextColor(1, 0.4, 0.3)
-    self.controls.petHealthThreshold = widgets.Number(pet, "Health threshold (%)", -142,
+    self.controls.petHealthThreshold = widgets.Number(pet, "Health threshold (%)", -214,
         setting("petHealthThreshold", "Pet health threshold"), function(value)
             return addon.Config.CanSet("petHealthThreshold", value)
         end, petFeedback, "Use a whole percentage between 1 and 100.")
     local movePet = CreateFrame("Button", nil, pet, "UIPanelButtonTemplate")
-    movePet:SetPoint("TOPLEFT", pet, "TOPLEFT", 20, -190)
+    movePet:SetPoint("TOPLEFT", pet, "TOPLEFT", 20, -262)
     movePet:SetSize(140, 28)
     movePet:SetText("Move icon")
     movePet:SetScript("OnClick", function()
