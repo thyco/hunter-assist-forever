@@ -32,11 +32,15 @@ function Warning.Initialize()
     local pulse = CreateFrame("Frame", nil, flash)
     pulse:SetAllPoints(flash)
     pulse:EnableMouse(false)
-    local tint = pulse:CreateTexture(nil, "BACKGROUND")
-    tint:SetAllPoints(pulse)
-    tint:SetTexture("Interface\\FullScreenTextures\\LowHealth")
-    tint:SetBlendMode("ADD")
-    tint:SetDesaturated(true)
+    local tints = {}
+    for index = 1, 3 do
+        local tint = pulse:CreateTexture(nil, "BACKGROUND")
+        tint:SetAllPoints(pulse)
+        tint:SetTexture("Interface\\FullScreenTextures\\LowHealth")
+        tint:SetBlendMode("ADD")
+        tint:SetDesaturated(true)
+        tints[index] = tint
+    end
 
     local animation = pulse:CreateAnimationGroup()
     animation:SetLooping("REPEAT")
@@ -53,24 +57,32 @@ function Warning.Initialize()
 
     flash:Hide()
     Warning.flashFrame = flash
-    Warning.flashTint = tint
+    Warning.flashTint = tints[1]
+    Warning.flashTints = tints
     Warning.flashAnimation = animation
-    Warning.ApplyFlashColor()
+    Warning.ApplyFlashAppearance()
 end
 
-function Warning.ApplyFlashColor()
-    if not Warning.flashTint then
+function Warning.ApplyFlashAppearance()
+    if not Warning.flashTints then
         return
     end
 
     local color = addon.Config.Get("petFlashColor")
-    if Warning.flashColor == color then
+    local intensity = addon.Config.Get("petFlashIntensity")
+    if Warning.flashColor == color and Warning.flashIntensity == intensity then
         return
     end
 
     local red, green, blue = addon.Config.GetColor("petFlashColor")
-    Warning.flashTint:SetVertexColor(red, green, blue, 0.8)
+    local strength = intensity / 100
+    for index, tint in ipairs(Warning.flashTints) do
+        local alpha = math.max(0, math.min(1, strength - index + 1))
+        tint:SetVertexColor(red, green, blue, alpha)
+    end
+
     Warning.flashColor = color
+    Warning.flashIntensity = intensity
 end
 
 function Warning.SetPreview(enabled)

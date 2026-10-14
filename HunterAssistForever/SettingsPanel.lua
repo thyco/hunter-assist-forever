@@ -6,7 +6,9 @@ local function setting(key, label)
     local default = addon.Config.GetDefault(key)
     -- Numeric cutoffs reset together, since intermediate defaults may violate
     -- their ordering. Only independent booleans use native proxy settings.
-    if type(default) == "number" and key ~= "reactiveBar" and key ~= "reactiveButton" and key ~= "petHealthThreshold" then
+    local proxyNumber = key == "reactiveBar" or key == "reactiveButton"
+        or key == "petHealthThreshold" or key == "petFlashIntensity"
+    if type(default) == "number" and not proxyNumber then
         return {
             GetValue = function() return addon.Config.Get(key) end,
             SetValue = function(_, value) addon.Config.Set(key, value) end,
@@ -55,7 +57,7 @@ function panel:Initialize()
     scroll:SetPoint("TOPLEFT", canvas, "TOPLEFT", 0, -8)
     scroll:SetPoint("BOTTOMRIGHT", canvas, "BOTTOMRIGHT", -28, 8)
     local content = CreateFrame("Frame", nil, scroll)
-    content:SetSize(580, 1396)
+    content:SetSize(580, 1434)
     scroll:SetScrollChild(content)
     scroll:SetScript("OnSizeChanged", function(_, width)
         content:SetWidth(math.max(1, width))
@@ -65,8 +67,8 @@ function panel:Initialize()
     local ammo = widgets.Section(content, "Ammo check", "Equipped ammunition · local low-ammo warning", -48, 380)
     local reactive = widgets.Section(content, "Mongoose Bite / Counterattack",
         "Combat only · either learned spell usable and off cooldown", -444, 210)
-    local pet = widgets.Section(content, "Pet settings", "Pet health and happiness alerts", -670, 506)
-    local aspect = widgets.Section(content, "Aspect reminder", "Combat only · Cheetah or Pack active", -1192, 170)
+    local pet = widgets.Section(content, "Pet settings", "Pet health and happiness alerts", -670, 544)
+    local aspect = widgets.Section(content, "Aspect reminder", "Combat only · Cheetah or Pack active", -1230, 170)
     self.sections = { ammo, reactive, pet, aspect }
 
     checkbox(aspect, "aspectCheckEnabled", "Show active Cheetah / Pack icon", -62,
@@ -102,11 +104,11 @@ function panel:Initialize()
     widgets.Tooltip(testFlash, "Preview the screen-edge pulse even with a healthy pet or outside combat. Click again to stop.")
     self.testFlashButton = testFlash
 
-    widgets.Text(pet, "Happiness", 20, -310, "GameFontNormal")
-    checkbox(pet, "petHappinessEnabled", "Enable pet happiness icon", -342,
+    widgets.Text(pet, "Happiness", 20, -348, "GameFontNormal")
+    checkbox(pet, "petHappinessEnabled", "Enable pet happiness icon", -380,
         "Show yellow when content and red when unhappy, with one local warning and gentle chime. Hidden when happy.")
     local moveHappiness = CreateFrame("Button", nil, pet, "UIPanelButtonTemplate")
-    moveHappiness:SetPoint("TOPLEFT", pet, "TOPLEFT", 20, -386)
+    moveHappiness:SetPoint("TOPLEFT", pet, "TOPLEFT", 20, -424)
     moveHappiness:SetSize(180, 28)
     moveHappiness:SetText("Move happiness icon")
     moveHappiness:SetScript("OnClick", function()
@@ -115,14 +117,18 @@ function panel:Initialize()
     widgets.Tooltip(moveHappiness, "Show the happiness icon and drag it. Close settings to save the position.")
     self.moveHappinessButton = moveHappiness
 
-    local petFeedback = widgets.Text(pet, "", 20, -452)
+    local petFeedback = widgets.Text(pet, "", 20, -490)
     petFeedback:SetTextColor(1, 0.4, 0.3)
-    self.controls.petHealthThreshold = widgets.Number(pet, "Health threshold (%)", -214,
+    self.controls.petFlashIntensity = widgets.Number(pet, "Pulse intensity (%)", -214,
+        setting("petFlashIntensity", "Pet pulse intensity"), function(value)
+            return addon.Config.CanSet("petFlashIntensity", value)
+        end, petFeedback, "Use a whole percentage from 10 to 300.")
+    self.controls.petHealthThreshold = widgets.Number(pet, "Health threshold (%)", -252,
         setting("petHealthThreshold", "Pet health threshold"), function(value)
             return addon.Config.CanSet("petHealthThreshold", value)
         end, petFeedback, "Use a whole percentage between 1 and 100.")
     local movePet = CreateFrame("Button", nil, pet, "UIPanelButtonTemplate")
-    movePet:SetPoint("TOPLEFT", pet, "TOPLEFT", 20, -262)
+    movePet:SetPoint("TOPLEFT", pet, "TOPLEFT", 20, -300)
     movePet:SetSize(140, 28)
     movePet:SetText("Move icon")
     movePet:SetScript("OnClick", function()

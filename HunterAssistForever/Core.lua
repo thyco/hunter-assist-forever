@@ -1,6 +1,6 @@
 local addonName, addon = ...
 addon.name = addonName
-addon.version = "0.8.4"
+addon.version = "0.8.5"
 addon.features = {}
 addon.started = false
 addon.running = false
@@ -23,8 +23,8 @@ function addon:Start()
     end
 
     self.Config.Subscribe(function(key)
-        if key == "petFlashColor" then
-            self.PetWarning.ApplyFlashColor()
+        if key == "petFlashColor" or key == "petFlashIntensity" then
+            self.PetWarning.ApplyFlashAppearance()
         else
             self:ApplySettings()
         end

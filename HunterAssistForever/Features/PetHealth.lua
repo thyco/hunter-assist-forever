@@ -110,7 +110,7 @@ end
 
 function Pet:ApplySettings()
     addon.PetHealthIcon:ApplySettings()
-    addon.PetWarning.ApplyFlashColor()
+    addon.PetWarning.ApplyFlashAppearance()
     self:Refresh()
 end
 

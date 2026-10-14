@@ -102,7 +102,31 @@ test('exact threshold shows red and one local warning', function()
     equal(addon.PetWarning.flashTint.color[1], 1)
     equal(addon.PetWarning.flashTint.color[2], 166 / 255)
     equal(addon.PetWarning.flashTint.color[3], 13 / 255)
-    equal(addon.PetWarning.flashTint.color[4], 0.8)
+    equal(addon.Config.Get('petFlashIntensity'), 150)
+    equal(#addon.PetWarning.flashTints, 3)
+    equal(addon.PetWarning.flashTint.color[4], 1)
+    equal(addon.PetWarning.flashTints[2].color[4], 0.5)
+    equal(addon.PetWarning.flashTints[3].color[4], 0)
+end)
+
+test('saved pulse intensity is applied and invalid values fall back to default', function()
+    local _, addon = setup(200, function(world)
+        world.env.HunterAssistForeverDB = { petFlashIntensity = 220 }
+    end)
+
+    equal(addon.Config.Get('petFlashIntensity'), 220)
+    equal(addon.PetWarning.flashTints[1].color[4], 1)
+    equal(addon.PetWarning.flashTints[2].color[4], 1)
+    assert(math.abs(addon.PetWarning.flashTints[3].color[4] - 0.2) < 0.000001)
+
+    local _, invalid = setup(200, function(world)
+        world.env.HunterAssistForeverDB = { petFlashIntensity = 400 }
+    end)
+
+    equal(invalid.Config.Get('petFlashIntensity'), 150)
+    equal(invalid.Config.CanSet('petFlashIntensity', 9), false)
+    equal(invalid.Config.CanSet('petFlashIntensity', 301), false)
+    equal(invalid.Config.CanSet('petFlashIntensity', 50.5), false)
 end)
 
 test('low health icon remains visible out of combat while warning and edge pulse wait', function()
@@ -384,6 +408,32 @@ test('closing settings stops the pulse preview and keeps the saved color', funct
     equal(addon.PetWarning.flashAnimation:IsPlaying(), false)
     equal(button.text, 'Test pulse')
     equal(addon.Config.Get('petFlashColor'), 'ff0080ff')
+end)
+
+test('pulse intensity setting updates the active preview without refreshing pet health', function()
+    local world, addon = setup(1000)
+    local edit = addon.SettingsPanel.controls.petFlashIntensity
+    local button = addon.SettingsPanel.testFlashButton
+    button.scripts.OnClick(button)
+    local animation = addon.PetWarning.flashAnimation
+    local healthReads = world.petReads
+
+    edit:SetText('275')
+    edit.scripts.OnEnterPressed(edit)
+
+    equal(addon.Config.Get('petFlashIntensity'), 275)
+    equal(addon.PetWarning.flashTints[1].color[4], 1)
+    equal(addon.PetWarning.flashTints[2].color[4], 1)
+    equal(addon.PetWarning.flashTints[3].color[4], 0.75)
+    equal(addon.PetWarning.flashAnimation, animation)
+    equal(animation:IsPlaying(), true)
+    equal(world.petReads, healthReads)
+
+    edit:SetText('301')
+    edit.scripts.OnEnterPressed(edit)
+
+    equal(addon.Config.Get('petFlashIntensity'), 275)
+    equal(edit:GetText(), '275')
 end)
 
 test('loading cancels a pulse preview and resets the test button label', function()

@@ -21,6 +21,7 @@ local defaults = {
     petHealthEnabled = true,
     petFlashEnabled = true,
     petFlashColor = "ffffa60d",
+    petFlashIntensity = 150,
     petHealthThreshold = 35,
     petShowPercent = false,
     petX = 50,
@@ -50,6 +51,9 @@ local function valid(key, value)
         end
         if key == "petHealthThreshold" then
             return value >= 1 and value <= 100 and value == math.floor(value)
+        end
+        if key == "petFlashIntensity" then
+            return value >= 10 and value <= 300 and value == math.floor(value)
         end
         if key == "ammoX" or key == "ammoY" or key == "petX" or key == "petY" or key == "petHappinessX" or key == "petHappinessY" or key == "aspectX" or key == "aspectY" then
             return value >= -10000 and value <= 10000

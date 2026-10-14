@@ -93,3 +93,11 @@ Replace the solid full-screen tint with WoW's low-health edge texture, desaturat
 ## Edge pulse visibility and preview (0.8.3)
 
 The user saw the pet icon and warning text in combat but no colored edges, isolating the symptom to edge rendering. The previous vertex alpha was 0.24, carried over from a solid full-screen overlay; that is likely too faint for the sparse additive edge texture. Raise edge opacity to 0.8. Add a Test pulse button beside the color picker, which temporarily shows the actual edge pulse regardless of pet health, combat or the flash checkbox, without warning text or sound. A second click, closing settings or leaving the world stops the preview. Keep the configured color and the normal combat/health gating unchanged outside the preview. Confirm visual intensity in the Forever client.
+
+## Numbered action-bar labels (0.8.4)
+
+Display the eight fixed reactive-glow bar choices as Action bar 1 through Action bar 8 in their existing order. Keep the saved numeric values, physical button prefixes, and default selection unchanged.
+
+## Configurable pet-health pulse intensity (0.8.5)
+
+Add a Pulse intensity (%) field to Pet settings, accepting whole values from 10 to 300 and defaulting to 150 for a stronger edge pulse. Layer the existing desaturated, additive low-health edge texture to support values above 100 without changing the color, pulse timing, combat gate, or threshold logic. Update the layers immediately when the setting changes, including during Test pulse, without another pet-health read or a Lua per-frame update. Preserve existing saved settings and use the default for an invalid saved intensity.
