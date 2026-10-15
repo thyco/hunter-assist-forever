@@ -1,10 +1,10 @@
 # Hunter Assist Forever
 
-A hunter-only helper for WoW Forever (interface 16001). Version 0.8.5 includes ammo, pet health and happiness indicators, a combat reminder for Aspect of the Cheetah / Pack, and the Mongoose Bite / Counterattack glow. Range tinting has been removed.
+A hunter-only helper for WoW Forever (interface 16001). Version 0.8.7 includes ammo, pet health and happiness indicators, a combat reminder for Aspect of the Cheetah / Pack, and the Mongoose Bite / Counterattack glow. Range tinting has been removed.
 
 ## Install
 
-Replace the existing `Interface/AddOns/HunterAssistForever` folder with the folder in `dist/HunterAssistForever-0.8.5.zip`, then reload the UI. Existing settings are retained; obsolete range settings are ignored.
+Replace the existing `Interface/AddOns/HunterAssistForever` folder with the folder in `dist/HunterAssistForever-0.8.7.zip`, then reload the UI. Existing settings are retained; obsolete range settings are ignored.
 
 Open **Settings → AddOns → Hunter Assist Forever**, or type `/haf config`.
 
@@ -32,7 +32,7 @@ Ammo checks wait three seconds after login or a loading screen before reading th
 
 Select a default **Action bar** and **Button** under **Mongoose Bite / Counterattack** in `/haf config`. The eight bar positions are labeled **Action bar 1** through **Action bar 8**. The feature is enabled by default on Action bar 3, Button 3. Both spells share the selected button, like Holy Strike/Judgement in Paladin Assist Forever. The selection follows a physical button position even when a bar changes pages; choose the position containing your spell or macro. Existing saved selections keep pointing to the same physical buttons.
 
-In combat, that button glows when either learned spell is reported usable by `C_Spell.IsSpellUsable` and is off its own cooldown. Mongoose Bite therefore requires the client's dodge opportunity; Counterattack requires its parry opportunity. Counterattack is ignored until learned, and learned ranks are matched by localized spell name. Insufficient resources or unavailable/restricted usability data do not produce a glow. As in the paladin reminder, a global cooldown alone does not hide a ready opportunity. This is a readiness reminder, not a target-range or facing check.
+In combat, that button glows when either learned spell is reported usable by `C_Spell.IsSpellUsable` and is off its own cooldown. Mongoose Bite therefore requires the client's dodge opportunity; Counterattack requires its parry opportunity. Counterattack is ignored until learned, and learned ranks are matched by localized spell name. The API's insufficient-resource result also counts as an available opportunity, and a confirmed glow stays visible through a global cooldown. A real spell cooldown, expired opportunity, or unavailable/restricted usability data clears it. This is a readiness reminder, not a target-range or facing check.
 
 The bundled LibCustomGlow renderer uses Blizzard's native proc artwork/colors. The glow clears when readiness ends, the selected button is hidden, the feature is disabled, or combat ends. Settings changes release the old button immediately. Buttons are prepared outside combat; newly created buttons encountered in combat wait until combat ends. Spell/cooldown events refresh immediately, with a 0.1-second fallback update only while in combat with an enabled selected button.
 

@@ -23,7 +23,9 @@ local function setup(configure)
     world.learned[#world.learned + 1] = 1495
     world.env.GetTime = function() return world.now end
     world.env.UnitAffectingCombat = function() return world.combat end
-    world.env.C_Spell.IsSpellUsable = function(id) return world.usable[id] end
+    world.env.C_Spell.IsSpellUsable = function(id)
+        return world.usable[id], world.noMana and world.noMana[id]
+    end
     world.env.C_Spell.GetSpellCooldown = function(id) return world.cooldowns[id] end
     world.main = world:button('ActionButton1', 1)
     world.side = world:button('MultiBarLeftButton7', 67)
@@ -145,6 +147,104 @@ test('global cooldown alone does not hide the reactive opportunity', function()
     world:fire('SPELL_UPDATE_COOLDOWN')
 
     equal(glowing(world, world.side), true)
+end)
+
+test('Mongoose Bite glow stays visible when usability briefly falls during GCD', function()
+    local world = setup()
+    world.usable[1495] = true
+    world:fire('SPELL_UPDATE_USABLE')
+    equal(glowing(world, world.side), true)
+
+    world.usable[1495] = false
+    world.cooldowns[1495] = { startTime = 100, duration = 1.5, isEnabled = true, isOnGCD = true }
+    world.cooldowns[61304] = { startTime = 100, duration = 1.5, isEnabled = true }
+    world:fire('SPELL_UPDATE_COOLDOWN')
+    world:tick(0.1)
+
+    equal(glowing(world, world.side), true)
+
+    world.now = 102
+    world.cooldowns[1495] = { startTime = 0, duration = 0, isEnabled = true, isOnGCD = false }
+    world.cooldowns[61304] = { startTime = 0, duration = 0, isEnabled = true }
+    world:fire('SPELL_UPDATE_COOLDOWN')
+
+    equal(glowing(world, world.side), false)
+end)
+
+test('Counterattack glow stays visible when usability briefly falls during GCD', function()
+    local world = setup(function(w) w.learned[#w.learned + 1] = 19306 end)
+    world.usable[19306] = true
+    world:fire('SPELL_UPDATE_USABLE')
+    equal(glowing(world, world.side), true)
+
+    world.usable[19306] = false
+    world.cooldowns[19306] = { startTime = 100, duration = 1.5, isEnabled = true, isOnGCD = true }
+    world.cooldowns[61304] = { startTime = 100, duration = 1.5, isEnabled = true }
+    world:fire('SPELL_UPDATE_COOLDOWN')
+
+    equal(glowing(world, world.side), true)
+end)
+
+test('insufficient resources do not clear a reactive glow during GCD', function()
+    local world = setup()
+    world.usable[1495] = true
+    world:fire('SPELL_UPDATE_USABLE')
+
+    world.usable[1495] = false
+    world.noMana = { [1495] = true }
+    world.cooldowns[1495] = { startTime = 100, duration = 1.5, isEnabled = true, isOnGCD = true }
+    world.cooldowns[61304] = { startTime = 100, duration = 1.5, isEnabled = true }
+    world:fire('SPELL_UPDATE_COOLDOWN')
+
+    equal(glowing(world, world.side), true)
+end)
+
+test('insufficient resources do not clear a reactive glow outside GCD', function()
+    local world = setup()
+    world.usable[1495] = true
+    world:fire('SPELL_UPDATE_USABLE')
+
+    world.usable[1495] = false
+    world.noMana = { [1495] = true }
+    world:fire('SPELL_UPDATE_USABLE')
+
+    equal(glowing(world, world.side), true)
+end)
+
+test('resource shortage can light a newly available reactive spell', function()
+    local world = setup()
+    world.usable[1495] = false
+    world.noMana = { [1495] = true }
+
+    world:fire('SPELL_UPDATE_USABLE')
+
+    equal(glowing(world, world.side), true)
+end)
+
+test('expired reactive opportunity clears glow after resource shortage', function()
+    local world = setup()
+    world.usable[1495] = false
+    world.noMana = { [1495] = true }
+    world:fire('SPELL_UPDATE_USABLE')
+    equal(glowing(world, world.side), true)
+
+    world.noMana[1495] = false
+    world:fire('SPELL_UPDATE_USABLE')
+
+    equal(glowing(world, world.side), false)
+end)
+
+test('a real cooldown clears a previously active reactive glow', function()
+    local world = setup()
+    world.usable[1495] = true
+    world:fire('SPELL_UPDATE_USABLE')
+
+    world.usable[1495] = false
+    world.cooldowns[1495] = { startTime = 100, duration = 5, isEnabled = true, isOnGCD = false }
+    world.cooldowns[61304] = { startTime = 100, duration = 1.5, isEnabled = true }
+    world:fire('SPELL_UPDATE_COOLDOWN')
+
+    equal(glowing(world, world.side), false)
 end)
 
 test('changing selected button clears the previous glow', function()
