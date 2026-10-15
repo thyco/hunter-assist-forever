@@ -81,6 +81,7 @@ function Feature:Stop()
     self.ready = false
     self.button = nil
     addon.ReactiveSpells.gcdOnly = {}
+    addon.ReactiveSpells.procUsable = {}
     addon.Glow.ClearOwner(self.owner)
     if self.frame then
         self.frame:SetScript("OnUpdate", nil)
