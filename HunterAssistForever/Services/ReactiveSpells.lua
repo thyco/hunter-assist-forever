@@ -83,7 +83,7 @@ function Spells:CooldownReady(id, cooldownEvent)
         return false, false
     end
 
-    local gcd = read(C_Spell and C_Spell.GetSpellCooldown, 61304)
+    local gcd = read(C_Spell and C_Spell.GetSpellCooldown, addon.gcdSpellID)
     if type(gcd) == "table" and number(gcd.startTime) and number(gcd.duration)
         and gcd.duration > 0 and start == gcd.startTime and duration == gcd.duration
         and now < start + duration then

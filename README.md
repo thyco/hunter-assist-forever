@@ -1,10 +1,10 @@
 # Hunter Assist Forever
 
-A hunter-only helper for WoW Forever (interface 16001). Version 0.8.10 includes ammo, pet health and happiness indicators, a combat reminder for Aspect of the Cheetah / Pack, and separate Mongoose Bite and Counterattack glows. Range tinting has been removed.
+A hunter-only helper for WoW Forever (interface 16001). Version 0.8.12 includes ammo, pet health and happiness indicators, a combat reminder for Aspect of the Cheetah / Pack, and separate Mongoose Bite and Counterattack glows. Range tinting has been removed.
 
 ## Install
 
-Replace the existing `Interface/AddOns/HunterAssistForever` folder with the folder in `dist/HunterAssistForever-0.8.10.zip`, then reload the UI. Existing settings are retained; obsolete range settings are ignored.
+Replace the existing `Interface/AddOns/HunterAssistForever` folder with the folder in `dist/HunterAssistForever-0.8.12.zip`, then reload the UI. Existing settings are retained; obsolete range settings are ignored.
 
 Open **Settings → AddOns → Hunter Assist Forever**, or type `/haf config`.
 

@@ -29,7 +29,7 @@ local function setup(configure)
     world.env.C_Spell.GetSpellCooldown = function(id) return world.cooldowns[id] end
     world.env.C_Spell.GetSpellTexture = function(id) return id == 19306 and 132269 or nil end
     world.env.C_Spell.GetSpellCooldownDuration = function(id)
-        return id == 61304 and world.gcdDurationObject or nil
+        return id == 29515 and world.gcdDurationObject or nil
     end
     world.main = world:button('ActionButton1', 1)
     world.side = world:button('MultiBarLeftButton7', 67)
@@ -167,6 +167,22 @@ test('Counterattack proc shows its icon and the GCD swipe over the selected butt
     equal(world.main.icon.texture, nil)
 end)
 
+test('Counterattack overlay uses the Forever GCD when duration objects are unavailable', function()
+    local world, addon = setup(function(w)
+        w.learned[#w.learned + 1] = 19306
+        w.env.HunterAssistForeverDB.counterattackBar = 1
+        w.env.HunterAssistForeverDB.counterattackButton = 1
+    end)
+    world.cooldowns[29515] = { startTime = 100, duration = 1.5, isEnabled = true }
+    world.usable[19306] = true
+
+    world:fire('SPELL_UPDATE_USABLE')
+
+    equal(addon.CounterattackOverlay.frame.shown, true)
+    equal(addon.CounterattackOverlay.cooldown.cooldownStart, 100)
+    equal(addon.CounterattackOverlay.cooldown.cooldownLength, 1.5)
+end)
+
 test('Counterattack icon disappears when proc ends or its own cooldown starts', function()
     local world, addon = setup(function(w)
         w.learned[#w.learned + 1] = 19306
@@ -204,6 +220,49 @@ test('Counterattack icon overlay can be disabled without clearing the glow', fun
     equal(glowing(world, world.main), true)
 end)
 
+test('unavailable cooldown widget does not prevent either reactive glow from starting', function()
+    local world = setup(function(w)
+        w.learned[#w.learned + 1] = 19306
+        w.env.HunterAssistForeverDB.counterattackBar = 1
+        w.env.HunterAssistForeverDB.counterattackButton = 1
+
+        local createFrame = w.env.CreateFrame
+        w.env.CreateFrame = function(kind, ...)
+            if kind == 'Cooldown' then
+                error('cooldown widget unavailable')
+            end
+
+            return createFrame(kind, ...)
+        end
+    end)
+    world.usable[1495] = true
+    world.usable[19306] = true
+
+    world:fire('SPELL_UPDATE_USABLE')
+
+    equal(glowing(world, world.side), true)
+    equal(glowing(world, world.main), true)
+end)
+
+test('overlay display failure cannot interrupt either reactive glow', function()
+    local world, addon = setup(function(w)
+        w.learned[#w.learned + 1] = 19306
+        w.env.HunterAssistForeverDB.counterattackBar = 1
+        w.env.HunterAssistForeverDB.counterattackButton = 1
+    end)
+    addon.CounterattackOverlay.entries[world.main].frame.Show = function()
+        error('display blocked')
+    end
+    world.usable[1495] = true
+    world.usable[19306] = true
+
+    local ok = pcall(function() world:fire('SPELL_UPDATE_USABLE') end)
+
+    equal(ok, true)
+    equal(glowing(world, world.side), true)
+    equal(glowing(world, world.main), true)
+end)
+
 test('restricted GCD setter cannot break Counterattack readiness', function()
     local world, addon = setup(function(w)
         w.learned[#w.learned + 1] = 19306
@@ -212,7 +271,7 @@ test('restricted GCD setter cannot break Counterattack readiness', function()
     end)
     local overlay = addon.CounterattackOverlay
     overlay.entries[world.main].cooldown.SetCooldown = function() error('protected cooldown') end
-    world.cooldowns[61304] = { startTime = 100, duration = 1.5, isEnabled = true }
+    world.cooldowns[29515] = { startTime = 100, duration = 1.5, isEnabled = true }
     world.usable[19306] = true
 
     local ok = pcall(function() world:fire('SPELL_UPDATE_USABLE') end)
@@ -229,7 +288,7 @@ test('GCD-only usable event does not briefly clear an active Mongoose Bite proc'
 
     world.usable[1495] = false
     world.cooldowns[1495] = { startTime = 0, duration = 0, isEnabled = true, isOnGCD = true }
-    world.cooldowns[61304] = { startTime = 100, duration = 1.5, isEnabled = true }
+    world.cooldowns[29515] = { startTime = 100, duration = 1.5, isEnabled = true }
     world:fire('SPELL_UPDATE_USABLE')
 
     equal(glowing(world, world.side), true)
@@ -315,7 +374,7 @@ test('Counterattack cooldown clears only its own glow', function()
     world:fire('SPELL_UPDATE_USABLE')
 
     world.cooldowns[19306] = { startTime = 100, duration = 5, isEnabled = true, isOnGCD = true }
-    world.cooldowns[61304] = { startTime = 100, duration = 1.5, isEnabled = true }
+    world.cooldowns[29515] = { startTime = 100, duration = 1.5, isEnabled = true }
     world:fire('SPELL_UPDATE_COOLDOWN')
 
     equal(glowing(world, world.side), true)
@@ -373,7 +432,7 @@ test('global cooldown alone does not hide the reactive opportunity', function()
     local world = setup()
     world.usable[1495] = true
     world.cooldowns[1495] = { startTime = 100, duration = 1.5, isEnabled = true }
-    world.cooldowns[61304] = { startTime = 100, duration = 1.5, isEnabled = true }
+    world.cooldowns[29515] = { startTime = 100, duration = 1.5, isEnabled = true }
 
     world:fire('SPELL_UPDATE_COOLDOWN')
 
@@ -388,7 +447,7 @@ test('Mongoose Bite glow stays visible when usability briefly falls during GCD',
 
     world.usable[1495] = false
     world.cooldowns[1495] = { startTime = 100, duration = 1.5, isEnabled = true, isOnGCD = true }
-    world.cooldowns[61304] = { startTime = 100, duration = 1.5, isEnabled = true }
+    world.cooldowns[29515] = { startTime = 100, duration = 1.5, isEnabled = true }
     world:fire('SPELL_UPDATE_COOLDOWN')
     world:tick(0.1)
 
@@ -396,10 +455,25 @@ test('Mongoose Bite glow stays visible when usability briefly falls during GCD',
 
     world.now = 102
     world.cooldowns[1495] = { startTime = 0, duration = 0, isEnabled = true, isOnGCD = false }
-    world.cooldowns[61304] = { startTime = 0, duration = 0, isEnabled = true }
+    world.cooldowns[29515] = { startTime = 0, duration = 0, isEnabled = true }
     world:fire('SPELL_UPDATE_COOLDOWN')
 
     equal(glowing(world, world.side), false)
+end)
+
+test('event GCD evidence preserves the proc when combat cooldown timings are restricted', function()
+    local world = setup()
+    world.usable[1495] = true
+    world:fire('SPELL_UPDATE_USABLE')
+
+    world.usable[1495] = false
+    world.cooldowns[1495] = { startTime = world.secret, duration = world.secret,
+        isEnabled = true, isActive = true, isOnGCD = true }
+    world:fire('SPELL_UPDATE_COOLDOWN')
+    world.cooldowns[1495].isOnGCD = nil
+    world:tick(0.1)
+
+    equal(glowing(world, world.side), true)
 end)
 
 test('Counterattack glow stays visible when usability briefly falls during GCD', function()
@@ -414,7 +488,7 @@ test('Counterattack glow stays visible when usability briefly falls during GCD',
 
     world.usable[19306] = false
     world.cooldowns[19306] = { startTime = 100, duration = 1.5, isEnabled = true, isOnGCD = true }
-    world.cooldowns[61304] = { startTime = 100, duration = 1.5, isEnabled = true }
+    world.cooldowns[29515] = { startTime = 100, duration = 1.5, isEnabled = true }
     world:fire('SPELL_UPDATE_COOLDOWN')
 
     equal(glowing(world, world.main), true)
@@ -428,7 +502,7 @@ test('insufficient resources do not clear a reactive glow during GCD', function(
     world.usable[1495] = false
     world.noMana = { [1495] = true }
     world.cooldowns[1495] = { startTime = 100, duration = 1.5, isEnabled = true, isOnGCD = true }
-    world.cooldowns[61304] = { startTime = 100, duration = 1.5, isEnabled = true }
+    world.cooldowns[29515] = { startTime = 100, duration = 1.5, isEnabled = true }
     world:fire('SPELL_UPDATE_COOLDOWN')
 
     equal(glowing(world, world.side), true)
@@ -476,7 +550,7 @@ test('a real cooldown clears a previously active reactive glow', function()
 
     world.usable[1495] = false
     world.cooldowns[1495] = { startTime = 100, duration = 5, isEnabled = true, isOnGCD = false }
-    world.cooldowns[61304] = { startTime = 100, duration = 1.5, isEnabled = true }
+    world.cooldowns[29515] = { startTime = 100, duration = 1.5, isEnabled = true }
     world:fire('SPELL_UPDATE_COOLDOWN')
 
     equal(glowing(world, world.side), false)
@@ -486,7 +560,7 @@ test('GCD flag does not override a longer own cooldown', function()
     local world = setup()
     world.usable[1495] = true
     world.cooldowns[1495] = { startTime = 100, duration = 6, isEnabled = true, isOnGCD = true }
-    world.cooldowns[61304] = { startTime = 100, duration = 1.5, isEnabled = true }
+    world.cooldowns[29515] = { startTime = 100, duration = 1.5, isEnabled = true }
 
     world:fire('SPELL_UPDATE_COOLDOWN')
 

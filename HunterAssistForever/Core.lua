@@ -1,6 +1,7 @@
 local addonName, addon = ...
 addon.name = addonName
-addon.version = "0.8.10"
+addon.version = "0.8.12"
+addon.gcdSpellID = 29515
 addon.features = {}
 addon.started = false
 addon.running = false

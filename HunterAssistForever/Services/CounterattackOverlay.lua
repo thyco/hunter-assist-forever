@@ -24,7 +24,7 @@ local function spellTexture()
 end
 
 function Overlay:Prepare(button)
-    if not button or self.entries[button] or InCombatLockdown() then
+    if not button or self.entries[button] or self.unavailable or InCombatLockdown() then
         return
     end
 
@@ -33,38 +33,50 @@ function Overlay:Prepare(button)
         return
     end
 
-    local frame = CreateFrame("Frame", nil, button)
-    frame:SetAllPoints(button.icon or button)
-    frame:SetFrameLevel(button:GetFrameLevel() + 5)
-    frame:EnableMouse(false)
+    local frame
+    local ok, entry = pcall(function()
+        frame = CreateFrame("Frame", nil, button)
+        frame:Hide()
+        frame:SetAllPoints(button.icon or button)
+        frame:SetFrameLevel(button:GetFrameLevel() + 5)
+        frame:EnableMouse(false)
 
-    local icon = frame:CreateTexture(nil, "ARTWORK")
-    icon:SetAllPoints(frame)
-    icon:SetTexture(texture)
+        local icon = frame:CreateTexture(nil, "ARTWORK")
+        icon:SetAllPoints(frame)
+        icon:SetTexture(texture)
 
-    local cooldown = CreateFrame("Cooldown", nil, frame, "CooldownFrameTemplate")
-    cooldown:SetAllPoints(frame)
-    cooldown:EnableMouse(false)
-    cooldown:SetDrawBling(false)
-    cooldown:SetDrawEdge(false)
-    cooldown:SetDrawSwipe(true)
-    cooldown:SetHideCountdownNumbers(true)
-    frame:Hide()
+        local cooldown = CreateFrame("Cooldown", nil, frame)
+        cooldown:SetAllPoints(frame)
+        cooldown:EnableMouse(false)
+        cooldown:SetDrawBling(false)
+        cooldown:SetDrawEdge(false)
+        cooldown:SetDrawSwipe(true)
+        cooldown:SetHideCountdownNumbers(true)
 
-    self.entries[button] = { frame = frame, texture = icon, cooldown = cooldown }
+        return { frame = frame, texture = icon, cooldown = cooldown }
+    end)
+
+    if ok then
+        self.entries[button] = entry
+    else
+        if frame then
+            frame:Hide()
+        end
+        self.unavailable = true
+    end
 end
 
 local function updateGCD(cooldown)
     if C_Spell and type(C_Spell.GetSpellCooldownDuration) == "function"
         and type(cooldown.SetCooldownFromDurationObject) == "function" then
-        local ok, duration = pcall(C_Spell.GetSpellCooldownDuration, 61304)
+        local ok, duration = pcall(C_Spell.GetSpellCooldownDuration, addon.gcdSpellID)
         if ok and duration and pcall(cooldown.SetCooldownFromDurationObject, cooldown, duration) then
             return
         end
     end
 
     if C_Spell and type(C_Spell.GetSpellCooldown) == "function" then
-        local ok, info = pcall(C_Spell.GetSpellCooldown, 61304)
+        local ok, info = pcall(C_Spell.GetSpellCooldown, addon.gcdSpellID)
         if ok and type(info) == "table" and addon.Client.Number(info.startTime)
             and addon.Client.Number(info.duration) and info.duration > 0 then
             if pcall(cooldown.SetCooldown, cooldown, info.startTime, info.duration) then
@@ -76,31 +88,35 @@ local function updateGCD(cooldown)
     pcall(cooldown.Clear, cooldown)
 end
 
+local function hide(entry)
+    if entry then
+        pcall(entry.frame.Hide, entry.frame)
+    end
+end
+
 function Overlay:Set(button, active)
     if self.button and self.button ~= button then
-        local previous = self.entries[self.button]
-        if previous then
-            previous.frame:Hide()
-        end
+        hide(self.entries[self.button])
     end
 
     self.button = button
     if not active or not button then
-        if button and self.entries[button] then
-            self.entries[button].frame:Hide()
-        end
+        hide(button and self.entries[button])
         return
     end
 
     self:Prepare(button)
     local entry = self.entries[button]
-    if not entry then
+    if not entry or self.unavailable then
         return
     end
 
     self.frame, self.texture, self.cooldown = entry.frame, entry.texture, entry.cooldown
     updateGCD(entry.cooldown)
-    entry.frame:Show()
+    if not pcall(entry.frame.Show, entry.frame) then
+        self.unavailable = true
+        hide(entry)
+    end
 end
 
 function Overlay:Stop()
