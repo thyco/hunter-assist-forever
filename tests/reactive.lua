@@ -511,6 +511,22 @@ test('GCD evidence and a zero own cooldown keep Mongoose Bite glowing despite ti
     equal(glowing(world, world.side), true)
 end)
 
+test('readable GCD timings tolerate small differences without an own duration object', function()
+    local world = setup()
+    world.usable[1495] = true
+    world:fire('SPELL_UPDATE_USABLE')
+
+    world.usable[1495] = false
+    world.cooldowns[1495] = { startTime = 100.02, duration = 1.48,
+        isEnabled = true, isActive = true }
+    world.cooldowns[29515] = { startTime = 100, duration = 1.5,
+        isEnabled = true, isActive = true }
+
+    world:fire('SPELL_UPDATE_USABLE')
+
+    equal(glowing(world, world.side), true)
+end)
+
 test('GCD evidence and a zero own cooldown keep Counterattack overlay visible', function()
     local world, addon = setup(function(w)
         w.learned[#w.learned + 1] = 19306
@@ -553,6 +569,42 @@ test('event GCD evidence preserves the proc when combat cooldown timings are res
     world:tick(0.1)
 
     equal(glowing(world, world.side), true)
+end)
+
+test('active GCD preserves Mongoose Bite before its cooldown event arrives', function()
+    local world = setup()
+    world.usable[1495] = true
+    world:fire('SPELL_UPDATE_USABLE')
+
+    world.usable[1495] = false
+    world.cooldowns[1495] = { startTime = world.secret, duration = world.secret,
+        isEnabled = true, isActive = true }
+    world.cooldowns[29515] = { startTime = world.secret, duration = world.secret,
+        isEnabled = true, isActive = true }
+
+    world:fire('SPELL_UPDATE_USABLE')
+
+    equal(glowing(world, world.side), true)
+end)
+
+test('second cooldown event without a GCD flag keeps Counterattack glowing', function()
+    local world = setup(function(w)
+        w.learned[#w.learned + 1] = 19306
+        w.env.HunterAssistForeverDB.counterattackBar = 1
+        w.env.HunterAssistForeverDB.counterattackButton = 1
+    end)
+    world.usable[19306] = true
+    world:fire('SPELL_UPDATE_USABLE')
+
+    world.usable[19306] = false
+    world.cooldowns[19306] = { startTime = world.secret, duration = world.secret,
+        isEnabled = true, isActive = true, isOnGCD = true }
+    world:fire('SPELL_UPDATE_COOLDOWN')
+    world.cooldowns[19306].isOnGCD = false
+
+    world:fire('SPELL_UPDATE_COOLDOWN')
+
+    equal(glowing(world, world.main), true)
 end)
 
 test('event GCD evidence expires instead of keeping a stale proc glow', function()
@@ -782,7 +834,7 @@ test('loading suppresses glow until world entry restores current readiness', fun
     equal(glowing(world, world.side), true)
 end)
 
-test('restricted GCD flag cannot retain readiness from prior cooldown event', function()
+test('restricted GCD flag retains bounded evidence from prior cooldown event', function()
     local world = setup()
     world.usable[1495] = true
     world.cooldowns[1495] = { isOnGCD = true, startTime = world.secret, duration = world.secret }
@@ -791,6 +843,11 @@ test('restricted GCD flag cannot retain readiness from prior cooldown event', fu
 
     world.cooldowns[1495] = { isOnGCD = world.secret, startTime = world.secret, duration = world.secret }
     world:fire('SPELL_UPDATE_COOLDOWN')
+
+    equal(glowing(world, world.side), true)
+
+    world.now = 102
+    world:tick(0.1)
 
     equal(glowing(world, world.side), false)
 end)

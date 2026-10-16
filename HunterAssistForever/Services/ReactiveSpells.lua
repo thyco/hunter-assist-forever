@@ -84,9 +84,9 @@ end
 function Spells:CooldownReady(id, cooldownEvent)
     local info = read(C_Spell and C_Spell.GetSpellCooldown, id)
     local now = read(GetTime)
-    if cooldownEvent then
-        self.gcdOnly[id] = type(info) == "table" and addon.Client.Boolean(info.isOnGCD) == true
-            and number(now) and now + gcdEvidenceSeconds or nil
+    if cooldownEvent and type(info) == "table"
+        and addon.Client.Boolean(info.isOnGCD) == true then
+        self.gcdOnly[id] = number(now) and now + gcdEvidenceSeconds or nil
     end
     if type(info) ~= "table" then
         return false, false
@@ -122,7 +122,7 @@ function Spells:CooldownReady(id, cooldownEvent)
 
     local start, duration = info.startTime, info.duration
     if not number(start) or not number(duration) then
-        return gcdEvidence == true, gcdEvidence == true
+        return gcdOnly == true, gcdOnly == true
     end
     if start == 0 or duration == 0 then
         return true, gcdOnly
@@ -138,7 +138,8 @@ function Spells:CooldownReady(id, cooldownEvent)
         return false, false
     end
 
-    if gcdEvidence or (gcdStart and start == gcdStart and duration == gcdDuration) then
+    if gcdEvidence or (gcdStart and duration <= gcdDuration + 0.1
+        and math.abs(start + duration - gcdStart - gcdDuration) <= 0.1) then
         return true, true
     end
 
