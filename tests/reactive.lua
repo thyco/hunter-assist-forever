@@ -256,6 +256,35 @@ test('casting Counterattack clears its overlay immediately through the GCD', fun
     equal(glowing(world, world.main), false)
 end)
 
+test('consumed Counterattack cannot reappear after GCD until opportunity ends', function()
+    local world, addon = setup(function(w)
+        w.learned[#w.learned + 1] = 19306
+        w.env.HunterAssistForeverDB.counterattackBar = 1
+        w.env.HunterAssistForeverDB.counterattackButton = 1
+    end)
+    world.usable[19306] = true
+    world:fire('SPELL_UPDATE_USABLE')
+    world:fire('UNIT_SPELLCAST_SUCCEEDED', 'player', 'cast-guid', 19306)
+
+    world.now = 102
+    world.usable[19306] = true
+    world.cooldowns[19306] = { startTime = 0, duration = 0, isEnabled = true }
+    world:fire('SPELL_DATA_LOAD_RESULT')
+    world:tick(0.1)
+
+    equal(addon.CounterattackOverlay.frame.shown, false)
+    equal(glowing(world, world.main), false)
+
+    world.usable[19306] = false
+    world:fire('SPELL_UPDATE_USABLE')
+    equal(addon.CounterattackOverlay.frame.shown, false)
+
+    world.usable[19306] = true
+    world:fire('SPELL_UPDATE_USABLE')
+
+    equal(addon.CounterattackOverlay.frame.shown, true)
+end)
+
 test('casting Mongoose Bite clears its glow immediately through the GCD', function()
     local world = setup()
     world.usable[1495] = true
@@ -274,6 +303,25 @@ test('casting Mongoose Bite clears its glow immediately through the GCD', functi
     world:tick(0.1)
 
     equal(glowing(world, world.side), false)
+end)
+
+test('consumed Mongoose Bite stays hidden until dodge opportunity ends', function()
+    local world = setup()
+    world.usable[1495] = true
+    world:fire('SPELL_UPDATE_USABLE')
+    world:fire('UNIT_SPELLCAST_SUCCEEDED', 'player', 'cast-guid', 1495)
+
+    world.now = 102
+    world:fire('SPELL_UPDATE_USABLE')
+    equal(glowing(world, world.side), false)
+
+    world.usable[1495] = false
+    world:fire('SPELL_UPDATE_USABLE')
+    equal(glowing(world, world.side), false)
+
+    world.usable[1495] = true
+    world:fire('SPELL_UPDATE_USABLE')
+    equal(glowing(world, world.side), true)
 end)
 
 test('another player spell does not consume Counterattack opportunity', function()
@@ -298,6 +346,25 @@ test('casting a learned higher Counterattack rank clears its overlay', function(
         w.env.HunterAssistForeverDB.counterattackBar = 1
         w.env.HunterAssistForeverDB.counterattackButton = 1
     end)
+    world.usable[20910] = true
+    world.cooldowns[20910] = { startTime = 0, duration = 0, isEnabled = true }
+    world:fire('SPELL_UPDATE_USABLE')
+    equal(addon.CounterattackOverlay.frame.shown, true)
+
+    world:fire('UNIT_SPELLCAST_SUCCEEDED', 'player', 'cast-guid', 20910)
+
+    equal(addon.CounterattackOverlay.frame.shown, false)
+end)
+
+test('casting one Counterattack rank consumes the opportunity for all learned ranks', function()
+    local world, addon = setup(function(w)
+        w.learned[#w.learned + 1] = 19306
+        w.learned[#w.learned + 1] = 20910
+        w.spells[20910] = { spellID = 20910, name = 'Counterattack', minRange = 0, maxRange = 5 }
+        w.env.HunterAssistForeverDB.counterattackBar = 1
+        w.env.HunterAssistForeverDB.counterattackButton = 1
+    end)
+    world.usable[19306] = true
     world.usable[20910] = true
     world.cooldowns[20910] = { startTime = 0, duration = 0, isEnabled = true }
     world:fire('SPELL_UPDATE_USABLE')

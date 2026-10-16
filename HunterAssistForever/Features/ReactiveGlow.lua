@@ -125,7 +125,7 @@ function Feature:Stop()
     self.buttons = {}
     addon.ReactiveSpells.gcdOnly = {}
     addon.ReactiveSpells.procUsable = {}
-    addon.ReactiveSpells.consumedUntil = {}
+    addon.ReactiveSpells.consumed = {}
     for _, kind in ipairs(kinds) do
         addon.Glow.ClearOwner(self.owners[kind])
     end
