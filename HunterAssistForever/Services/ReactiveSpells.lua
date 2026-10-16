@@ -76,7 +76,7 @@ function Spells:CooldownReady(id, cooldownEvent)
     end
     if start == 0 or duration == 0 then
         self.gcdOnly[id] = nil
-        return true, false
+        return true, addon.Client.Boolean(info.isOnGCD) == true
     end
 
     if not number(now) then

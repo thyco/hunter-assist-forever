@@ -1,10 +1,10 @@
 # Hunter Assist Forever
 
-A hunter-only helper for WoW Forever (interface 16001). Version 0.8.9 includes ammo, pet health and happiness indicators, a combat reminder for Aspect of the Cheetah / Pack, and separate Mongoose Bite and Counterattack glows. Range tinting has been removed.
+A hunter-only helper for WoW Forever (interface 16001). Version 0.8.10 includes ammo, pet health and happiness indicators, a combat reminder for Aspect of the Cheetah / Pack, and separate Mongoose Bite and Counterattack glows. Range tinting has been removed.
 
 ## Install
 
-Replace the existing `Interface/AddOns/HunterAssistForever` folder with the folder in `dist/HunterAssistForever-0.8.9.zip`, then reload the UI. Existing settings are retained; obsolete range settings are ignored.
+Replace the existing `Interface/AddOns/HunterAssistForever` folder with the folder in `dist/HunterAssistForever-0.8.10.zip`, then reload the UI. Existing settings are retained; obsolete range settings are ignored.
 
 Open **Settings → AddOns → Hunter Assist Forever**, or type `/haf config`.
 
@@ -33,6 +33,8 @@ Ammo checks wait three seconds after login or a loading screen before reading th
 Each spell has its own settings group in `/haf config`, with an enable checkbox and separate **Action bar** and **Button** choices. The eight bar positions are labeled **Action bar 1** through **Action bar 8**. Mongoose Bite defaults to Action bar 3, Button 3; an existing reactive-glow selection migrates to Mongoose Bite. Counterattack is enabled but starts with no bar selected, so choose its button after learning the spell. Each selection follows a physical button position even when a bar changes pages; choose the position containing that spell or macro.
 
 Each glow also has **Use Blizzard native glow** (on by default) and its own **Custom glow color** picker, as in Warrior Assist Forever. Uncheck native glow to use the chosen color. Changes to either setting update an active glow immediately; switching native back on restores Blizzard's original colors. The two choices are saved independently.
+
+**Show Counterattack icon overlay** is on by default. During a Counterattack opportunity, it shows the Counterattack icon over the selected button with a separate GCD swipe. It hides when the opportunity ends, Counterattack enters its own cooldown, combat ends, or the setting is disabled. The action, key binding, tooltip and underlying cooldown remain those of the original button; the overlay never chooses or casts a spell. The existing proc glow can be toggled independently. The overlay is prepared outside combat, so a newly selected button during combat may need to wait until combat ends before its overlay appears.
 
 In combat, each selected button glows when its learned spell is reported usable by `C_Spell.IsSpellUsable` and is off its own cooldown. Mongoose Bite therefore requires the client's dodge opportunity; Counterattack requires its parry opportunity. Counterattack is ignored until learned, and learned ranks are matched by localized spell name. The API's insufficient-resource result also counts as an available opportunity, and a confirmed glow stays visible through a global cooldown. A real spell cooldown, expired opportunity, or unavailable/restricted usability data clears that spell's glow. This is a readiness reminder, not a target-range or facing check.
 
@@ -77,7 +79,7 @@ The addon follows the module/packaging structure of `paladin-assist-forever` and
 - Confirm the happiness icon is hidden when happy, yellow when content, and red when unhappy. Feed your pet or let its happiness change; verify the icon updates without a reload. Test moving it independently.
 - In Pet settings, click **Test pulse** with a healthy pet and confirm the colored edges appear and the center stays clear. Change **Pulse intensity (%)** while the preview is running and compare 50, 150, and 250; the pulse should strengthen without restarting. Click Test pulse again or close settings to stop it. If the preview is invisible, report that before testing the health trigger.
 - Check that the low-health icon can appear out of combat while its warning text, chime and screen-edge pulse wait until combat begins. On combat exit, the text and pulse should hide while the icon remains if the pet is still low. An unhappy pet continues to warn out of combat. When `/haf` reports pet health as visual only, check that the red icon follows the threshold and, in combat, the centered **Pet health low!** text and edge pulse do too; no low-health sound is expected in that mode. Choose another **Flash color** while the pulse is visible and confirm it changes immediately; canceling the picker should restore the old color. Turn off **Flash screen at low pet health** and confirm the icon and text remain. Confirm the low-ammo warning still uses its original sound.
-- Verify no range coloring remains after reloading. Select a separate Counterattack button after learning it; each button should glow only for its own dodge/parry opportunity, stay lit through the global cooldown, and clear when that spell enters its own cooldown.
+- Verify no range coloring remains after reloading. Select a separate Counterattack button after learning it; each button should glow only for its own dodge/parry opportunity, stay lit through the global cooldown, and clear when that spell enters its own cooldown. The Counterattack icon overlay should cover that button during its proc and show the GCD swipe; hovering or pressing the button should still use its original action.
 - Activate Cheetah or Pack out of combat: the aspect icon should stay hidden. Enter combat: the larger matching icon and glow should appear. Cancel or change the aspect: the icon should clear or change. Turn off only the glow checkbox: the icon should remain. Try Move icon to place it.
 
 ## API reference

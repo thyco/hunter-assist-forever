@@ -14,6 +14,7 @@ local defaults = {
     mongooseNativeColor = true,
     mongooseGlowColor = "ffffd24a",
     counterattackGlowEnabled = true,
+    counterattackOverlayEnabled = true,
     counterattackBar = 0,
     counterattackButton = 1,
     counterattackNativeColor = true,

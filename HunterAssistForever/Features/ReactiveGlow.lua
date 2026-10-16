@@ -14,6 +14,11 @@ function Feature:Prepare()
         for _, button in ipairs(addon.Buttons.All()) do
             addon.Glow.Prepare(button)
         end
+
+        if addon.Config.Get("counterattackOverlayEnabled") then
+            addon.CounterattackOverlay:Prepare(addon.Buttons.Selected(
+                addon.Config.Get("counterattackBar"), addon.Config.Get("counterattackButton")))
+        end
     end
 end
 
@@ -66,7 +71,8 @@ function Feature:Refresh(cooldownEvent)
     for _, kind in ipairs(kinds) do
         local owner = self.owners[kind]
         local button
-        if addon.Config.Get(kind .. "GlowEnabled") then
+        if addon.Config.Get(kind .. "GlowEnabled")
+            or (kind == "counterattack" and addon.Config.Get("counterattackOverlayEnabled")) then
             button = addon.Buttons.Selected(addon.Config.Get(kind .. "Bar"), addon.Config.Get(kind .. "Button"))
         end
 
@@ -78,10 +84,18 @@ function Feature:Refresh(cooldownEvent)
         if combat and button then
             polling = true
             self.ready[kind] = addon.ReactiveSpells:Ready(kind, cooldownEvent)
-            addon.Glow.Set(button, owner, button:IsVisible() and self.ready[kind])
+            local visible = button:IsVisible() and self.ready[kind]
+            addon.Glow.Set(button, owner, visible and addon.Config.Get(kind .. "GlowEnabled"))
+            if kind == "counterattack" then
+                addon.CounterattackOverlay:Set(button,
+                    visible and addon.Config.Get("counterattackOverlayEnabled"))
+            end
         else
             self.ready[kind] = false
             addon.Glow.ClearOwner(owner)
+            if kind == "counterattack" then
+                addon.CounterattackOverlay:Stop()
+            end
         end
     end
 
@@ -110,6 +124,7 @@ function Feature:Stop()
     for _, kind in ipairs(kinds) do
         addon.Glow.ClearOwner(self.owners[kind])
     end
+    addon.CounterattackOverlay:Stop()
     if self.frame then
         self.frame:SetScript("OnUpdate", nil)
     end

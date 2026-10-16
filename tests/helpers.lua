@@ -123,6 +123,13 @@ function Helpers.new()
         function value:CreateFontString() return frame('FontString', nil, self) end
         function value:CreateTexture() return frame('Texture', nil, self) end
         function value:SetTexture(texture) self.texture = texture end
+        function value:SetCooldownFromDurationObject(duration) self.cooldownDuration = duration end
+        function value:SetCooldown(start, duration) self.cooldownStart = start; self.cooldownLength = duration end
+        function value:Clear() self.cooldownDuration = nil; self.cooldownStart = nil; self.cooldownLength = nil end
+        function value:SetDrawBling(enabled) self.drawBling = enabled end
+        function value:SetDrawEdge(enabled) self.drawEdge = enabled end
+        function value:SetDrawSwipe(enabled) self.drawSwipe = enabled end
+        function value:SetHideCountdownNumbers(hidden) self.hideCountdownNumbers = hidden end
         function value:SetBlendMode(mode) self.blendMode = mode end
         function value:SetColorTexture(...) self.colorTexture = { ... } end
         function value:SetTexCoord(...) self.texCoord = { ... } end

@@ -58,7 +58,7 @@ function panel:Initialize()
     scroll:SetPoint("TOPLEFT", canvas, "TOPLEFT", 0, -8)
     scroll:SetPoint("BOTTOMRIGHT", canvas, "BOTTOMRIGHT", -28, 8)
     local content = CreateFrame("Frame", nil, scroll)
-    content:SetSize(580, 1780)
+    content:SetSize(580, 1820)
     scroll:SetScrollChild(content)
     scroll:SetScript("OnSizeChanged", function(_, width)
         content:SetWidth(math.max(1, width))
@@ -69,9 +69,9 @@ function panel:Initialize()
     local mongoose = widgets.Section(content, "Mongoose Bite glow",
         "Combat only · dodge opportunity and own cooldown ready", -444, 276)
     local counterattack = widgets.Section(content, "Counterattack glow",
-        "Combat only · parry opportunity and own cooldown ready", -736, 276)
-    local pet = widgets.Section(content, "Pet settings", "Pet health and happiness alerts", -1028, 544)
-    local aspect = widgets.Section(content, "Aspect reminder", "Combat only · Cheetah or Pack active", -1588, 170)
+        "Combat only · parry opportunity and own cooldown ready", -736, 316)
+    local pet = widgets.Section(content, "Pet settings", "Pet health and happiness alerts", -1068, 544)
+    local aspect = widgets.Section(content, "Aspect reminder", "Combat only · Cheetah or Pack active", -1628, 170)
     self.sections = { ammo, mongoose, counterattack, pet, aspect }
 
     checkbox(aspect, "aspectCheckEnabled", "Show active Cheetah / Pack icon", -62,
@@ -173,6 +173,8 @@ function panel:Initialize()
         "Use Blizzard's original proc glow colors instead of the custom color below.")
     color(counterattack, "counterattackGlowColor", "Custom glow color", -212,
         "Choose the Counterattack glow color. Uncheck Blizzard native glow to use it.")
+    checkbox(counterattack, "counterattackOverlayEnabled", "Show Counterattack icon overlay", -250,
+        "Show the Counterattack icon and its GCD swipe on the selected button during the parry opportunity. The button's action and tooltip stay the same.")
 
     checkbox(ammo, "ammoCheckEnabled", "Enable ammo check", -62,
         "Show equipped ammo status and warn below the configured threshold. Applies to hunters only.")
