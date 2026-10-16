@@ -6,7 +6,8 @@ local function setting(key, label)
     local default = addon.Config.GetDefault(key)
     -- Numeric cutoffs reset together, since intermediate defaults may violate
     -- their ordering. Only independent booleans use native proxy settings.
-    local proxyNumber = key == "reactiveBar" or key == "reactiveButton"
+    local proxyNumber = key == "mongooseBar" or key == "mongooseButton"
+        or key == "counterattackBar" or key == "counterattackButton"
         or key == "petHealthThreshold" or key == "petFlashIntensity"
     if type(default) == "number" and not proxyNumber then
         return {
@@ -57,7 +58,7 @@ function panel:Initialize()
     scroll:SetPoint("TOPLEFT", canvas, "TOPLEFT", 0, -8)
     scroll:SetPoint("BOTTOMRIGHT", canvas, "BOTTOMRIGHT", -28, 8)
     local content = CreateFrame("Frame", nil, scroll)
-    content:SetSize(580, 1434)
+    content:SetSize(580, 1660)
     scroll:SetScrollChild(content)
     scroll:SetScript("OnSizeChanged", function(_, width)
         content:SetWidth(math.max(1, width))
@@ -65,11 +66,13 @@ function panel:Initialize()
 
     widgets.Text(content, "Hunter Assist Forever", 8, -8, "GameFontNormalLarge")
     local ammo = widgets.Section(content, "Ammo check", "Equipped ammunition · local low-ammo warning", -48, 380)
-    local reactive = widgets.Section(content, "Mongoose Bite / Counterattack",
-        "Combat only · either learned spell usable and off cooldown", -444, 210)
-    local pet = widgets.Section(content, "Pet settings", "Pet health and happiness alerts", -670, 544)
-    local aspect = widgets.Section(content, "Aspect reminder", "Combat only · Cheetah or Pack active", -1230, 170)
-    self.sections = { ammo, reactive, pet, aspect }
+    local mongoose = widgets.Section(content, "Mongoose Bite glow",
+        "Combat only · dodge opportunity and own cooldown ready", -444, 210)
+    local counterattack = widgets.Section(content, "Counterattack glow",
+        "Combat only · parry opportunity and own cooldown ready", -670, 210)
+    local pet = widgets.Section(content, "Pet settings", "Pet health and happiness alerts", -896, 544)
+    local aspect = widgets.Section(content, "Aspect reminder", "Combat only · Cheetah or Pack active", -1456, 170)
+    self.sections = { ammo, mongoose, counterattack, pet, aspect }
 
     checkbox(aspect, "aspectCheckEnabled", "Show active Cheetah / Pack icon", -62,
         "Show a larger icon during combat while Aspect of the Cheetah or Aspect of the Pack is active.")
@@ -137,8 +140,10 @@ function panel:Initialize()
     widgets.Tooltip(movePet, "Show a red preview and drag it. Close settings to finish; position is saved.")
     self.movePetButton = movePet
 
-    checkbox(reactive, "reactiveGlowEnabled", "Enable reactive ability glow", -62,
-        "Use Blizzard's native glow when Mongoose Bite or Counterattack is usable and off its own cooldown.")
+    checkbox(mongoose, "mongooseGlowEnabled", "Enable Mongoose Bite glow", -62,
+        "Use Blizzard's native glow when Mongoose Bite is usable and off its own cooldown.")
+    checkbox(counterattack, "counterattackGlowEnabled", "Enable Counterattack glow", -62,
+        "Use Blizzard's native glow when Counterattack is learned, usable and off its own cooldown.")
     local bars = { { value = 0, label = "Not selected" } }
     for index, label in ipairs(addon.Buttons.Bars()) do
         bars[#bars + 1] = { value = index, label = label }
@@ -147,11 +152,17 @@ function panel:Initialize()
     for index = 1, 12 do
         buttons[#buttons + 1] = { value = index, label = "Button " .. index }
     end
-    self.controls.reactiveBar = widgets.Dropdown(reactive, "Action bar", -100,
-        setting("reactiveBar", "Reactive ability action bar"), bars,
+    self.controls.mongooseBar = widgets.Dropdown(mongoose, "Action bar", -100,
+        setting("mongooseBar", "Mongoose Bite action bar"), bars,
         "Choose a default action bar. No glow appears until a bar is selected.")
-    self.controls.reactiveButton = widgets.Dropdown(reactive, "Button", -136,
-        setting("reactiveButton", "Reactive ability button"), buttons,
+    self.controls.mongooseButton = widgets.Dropdown(mongoose, "Button", -136,
+        setting("mongooseButton", "Mongoose Bite button"), buttons,
+        "Uses a fixed button position, including when the bar changes pages. Choose the button containing your spell or macro.")
+    self.controls.counterattackBar = widgets.Dropdown(counterattack, "Action bar", -100,
+        setting("counterattackBar", "Counterattack action bar"), bars,
+        "Choose a default action bar. No glow appears until a bar is selected.")
+    self.controls.counterattackButton = widgets.Dropdown(counterattack, "Button", -136,
+        setting("counterattackButton", "Counterattack button"), buttons,
         "Uses a fixed button position, including when the bar changes pages. Choose the button containing your spell or macro.")
 
     checkbox(ammo, "ammoCheckEnabled", "Enable ammo check", -62,

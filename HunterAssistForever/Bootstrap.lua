@@ -25,10 +25,13 @@ SlashCmdList.HUNTERASSISTFOREVER = function(message)
     end
 
     addon.ReactiveGlow:Refresh()
-    print("Reactive glow: " .. (addon.Config.Get("reactiveGlowEnabled") and "enabled" or "disabled")
-        .. " | bar " .. addon.Config.Get("reactiveBar") .. ", button " .. addon.Config.Get("reactiveButton")
-        .. " | learned spells: " .. #addon.ReactiveSpells.ids
-        .. " | ready: " .. tostring(addon.ReactiveGlow.ready == true))
+    for _, spell in ipairs({ { "mongoose", "Mongoose Bite" }, { "counterattack", "Counterattack" } }) do
+        local kind, label = spell[1], spell[2]
+        print(label .. " glow: " .. (addon.Config.Get(kind .. "GlowEnabled") and "enabled" or "disabled")
+            .. " | bar " .. addon.Config.Get(kind .. "Bar") .. ", button " .. addon.Config.Get(kind .. "Button")
+            .. " | learned spells: " .. #addon.ReactiveSpells.ids[kind]
+            .. " | ready: " .. tostring(addon.ReactiveGlow.ready[kind] == true))
+    end
     addon.Ammo:Refresh()
     print("Ammo: " .. (addon.Ammo.sample and tostring(addon.Ammo.sample.count) or "unavailable")
         .. " | " .. (addon.Ammo.status or "not checked"))

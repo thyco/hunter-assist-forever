@@ -1,5 +1,11 @@
 local _, addon = ...
-local Feature = { settingKey = "reactiveGlowEnabled", eventDriven = true, owner = "reactive-ready" }
+local kinds = { "mongoose", "counterattack" }
+local Feature = {
+    eventDriven = true,
+    owners = { mongoose = "mongoose-ready", counterattack = "counterattack-ready" },
+    buttons = {},
+    ready = {},
+}
 addon.ReactiveGlow = Feature
 addon:RegisterFeature(Feature)
 
@@ -50,39 +56,50 @@ end
 
 function Feature:Refresh(cooldownEvent)
     self:Prepare()
-    if not addon.Config.Get(self.settingKey) or self.loading then
+    if self.loading then
         self:Stop()
         return
     end
 
-    local button = addon.Buttons.Selected(addon.Config.Get("reactiveBar"), addon.Config.Get("reactiveButton"))
-    if self.button and self.button ~= button then
-        addon.Glow.Set(self.button, self.owner, false)
-    end
-    self.button = button
-
     local combat = UnitAffectingCombat and addon.Client.Boolean(UnitAffectingCombat("player")) == true
-    self.frame:SetScript("OnUpdate", combat and button and self.update or nil)
-    if not combat or not button then
-        self.ready = false
-        addon.Glow.ClearOwner(self.owner)
-        return
+    local polling = false
+    for _, kind in ipairs(kinds) do
+        local owner = self.owners[kind]
+        local button
+        if addon.Config.Get(kind .. "GlowEnabled") then
+            button = addon.Buttons.Selected(addon.Config.Get(kind .. "Bar"), addon.Config.Get(kind .. "Button"))
+        end
+
+        if self.buttons[kind] and self.buttons[kind] ~= button then
+            addon.Glow.Set(self.buttons[kind], owner, false)
+        end
+        self.buttons[kind] = button
+
+        if combat and button then
+            polling = true
+            self.ready[kind] = addon.ReactiveSpells:Ready(kind, cooldownEvent)
+            addon.Glow.Set(button, owner, button:IsVisible() and self.ready[kind])
+        else
+            self.ready[kind] = false
+            addon.Glow.ClearOwner(owner)
+        end
     end
 
-    self.ready = addon.ReactiveSpells:AnyReady(cooldownEvent)
-    addon.Glow.Set(button, self.owner, button:IsVisible() and self.ready)
+    self.frame:SetScript("OnUpdate", polling and self.update or nil)
 end
 
 function Feature:ApplySettings()
-    self:Refresh(true)
+    self:Refresh()
 end
 
 function Feature:Stop()
-    self.ready = false
-    self.button = nil
+    self.ready = {}
+    self.buttons = {}
     addon.ReactiveSpells.gcdOnly = {}
     addon.ReactiveSpells.procUsable = {}
-    addon.Glow.ClearOwner(self.owner)
+    for _, kind in ipairs(kinds) do
+        addon.Glow.ClearOwner(self.owners[kind])
+    end
     if self.frame then
         self.frame:SetScript("OnUpdate", nil)
     end

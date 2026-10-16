@@ -1,7 +1,7 @@
 local _, addon = ...
-local Spells = { ids = {}, gcdOnly = {}, procUsable = {} }
+local Spells = { ids = { mongoose = {}, counterattack = {} }, gcdOnly = {}, procUsable = {} }
 addon.ReactiveSpells = Spells
-local seeds = { 1495, 19306 } -- Mongoose Bite, Counterattack (rank one).
+local seeds = { mongoose = 1495, counterattack = 19306 } -- Rank one.
 
 local function read(api, ...)
     if type(api) ~= "function" then
@@ -32,12 +32,12 @@ local function spellUsability(id)
 end
 
 function Spells:Rebuild()
-    self.ids, self.gcdOnly, self.procUsable = {}, {}, {}
+    self.ids, self.gcdOnly, self.procUsable = { mongoose = {}, counterattack = {} }, {}, {}
     local names, seen = {}, {}
-    for _, id in ipairs(seeds) do
+    for kind, id in pairs(seeds) do
         local info = read(C_Spell and C_Spell.GetSpellInfo, id)
         if type(info) == "table" and addon.Client.Readable(info.name) and type(info.name) == "string" then
-            names[info.name] = true
+            names[info.name] = kind
         end
     end
 
@@ -46,7 +46,8 @@ function Spells:Rebuild()
         local info = read(C_Spell and C_Spell.GetSpellInfo, entry.id)
         if type(info) == "table" and addon.Client.Readable(info.name)
             and type(info.name) == "string" and names[info.name] and not seen[entry.id] then
-            self.ids[#self.ids + 1] = entry.id
+            local kind = names[info.name]
+            self.ids[kind][#self.ids[kind] + 1] = entry.id
             seen[entry.id] = true
         end
     end
@@ -70,35 +71,36 @@ function Spells:CooldownReady(id, cooldownEvent)
 
     local start, duration = info.startTime, info.duration
     local now = read(GetTime)
-    if self.gcdOnly[id] then
-        if not number(start) or not number(duration) or not number(now)
-            or (start > 0 and duration > 0 and now < start + duration) then
-            return true, true
-        end
-
-        self.gcdOnly[id] = nil
-    end
-
     if not number(start) or not number(duration) then
-        return false, false
+        return self.gcdOnly[id] == true, self.gcdOnly[id] == true
     end
     if start == 0 or duration == 0 then
+        self.gcdOnly[id] = nil
         return true, false
+    end
+
+    if not number(now) then
+        return false, false
     end
 
     local gcd = read(C_Spell and C_Spell.GetSpellCooldown, 61304)
     if type(gcd) == "table" and number(gcd.startTime) and number(gcd.duration)
         and gcd.duration > 0 and start == gcd.startTime and duration == gcd.duration
-        and number(now) and now < start + duration then
+        and now < start + duration then
         return true, true
     end
 
-    return number(now) and now >= start + duration, false
+    if now >= start + duration then
+        self.gcdOnly[id] = nil
+        return true, false
+    end
+
+    return false, false
 end
 
-function Spells:AnyReady(cooldownEvent)
+function Spells:Ready(kind, cooldownEvent)
     local ready = false
-    for _, id in ipairs(self.ids) do
+    for _, id in ipairs(self.ids[kind] or {}) do
         local cooldownReady, gcdOnly = self:CooldownReady(id, cooldownEvent)
         local usable, noMana = spellUsability(id)
         -- Resource shortage also reports a usable reactive opportunity; a known GCD preserves it.

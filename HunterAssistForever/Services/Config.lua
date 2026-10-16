@@ -8,9 +8,12 @@ local defaults = {
     ammoYellowAt = 600,
     ammoRedAt = 400,
     ammoWarnBelow = 200,
-    reactiveGlowEnabled = true,
-    reactiveBar = 3,
-    reactiveButton = 3,
+    mongooseGlowEnabled = true,
+    mongooseBar = 3,
+    mongooseButton = 3,
+    counterattackGlowEnabled = true,
+    counterattackBar = 0,
+    counterattackButton = 1,
     aspectCheckEnabled = true,
     aspectGlowEnabled = true,
     aspectX = 0,
@@ -44,9 +47,9 @@ local function valid(key, value)
         if value ~= value or value == math.huge or value == -math.huge then
             return false
         end
-        if key == "reactiveBar" then
+        if key == "mongooseBar" or key == "counterattackBar" then
             return value >= 0 and value <= 8 and value == math.floor(value)
-        elseif key == "reactiveButton" then
+        elseif key == "mongooseButton" or key == "counterattackButton" then
             return value >= 1 and value <= 12 and value == math.floor(value)
         end
         if key == "petHealthThreshold" then
@@ -78,6 +81,20 @@ function Config.Initialize()
     end
 
     values = HunterAssistForeverDB
+    if values.mongooseGlowEnabled == nil then
+        values.mongooseGlowEnabled = values.reactiveGlowEnabled
+    end
+    if values.mongooseBar == nil then
+        values.mongooseBar = values.reactiveBar
+    end
+    if values.mongooseButton == nil then
+        values.mongooseButton = values.reactiveButton
+    end
+
+    values.reactiveGlowEnabled = nil
+    values.reactiveBar = nil
+    values.reactiveButton = nil
+
     for key, default in pairs(defaults) do
         if not valid(key, values[key]) then
             values[key] = default

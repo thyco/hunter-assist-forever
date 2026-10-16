@@ -98,11 +98,96 @@ test('unlearned Counterattack cannot trigger glow', function()
 end)
 
 test('learning Counterattack enables its parry usability check', function()
-    local world = setup()
+    local world = setup(function(w)
+        w.env.HunterAssistForeverDB.counterattackBar = 1
+        w.env.HunterAssistForeverDB.counterattackButton = 1
+    end)
     world.usable[19306] = true
     world.learned[#world.learned + 1] = 19306
 
     world:fire('SPELLS_CHANGED')
+
+    equal(glowing(world, world.main), true)
+    equal(glowing(world, world.side), false)
+end)
+
+test('Mongoose Bite and Counterattack glow on their own selected buttons', function()
+    local world = setup(function(w)
+        w.learned[#w.learned + 1] = 19306
+        w.env.HunterAssistForeverDB.counterattackBar = 1
+        w.env.HunterAssistForeverDB.counterattackButton = 1
+    end)
+    world.usable[1495] = true
+    world.usable[19306] = true
+
+    world:fire('SPELL_UPDATE_USABLE')
+
+    equal(glowing(world, world.side), true)
+    equal(glowing(world, world.main), true)
+
+    world.usable[1495] = false
+    world:fire('SPELL_UPDATE_USABLE')
+
+    equal(glowing(world, world.side), false)
+    equal(glowing(world, world.main), true)
+end)
+
+test('Counterattack is unselected by default and does not light Mongoose Bite button', function()
+    local world = setup(function(w) w.learned[#w.learned + 1] = 19306 end)
+    world.usable[19306] = true
+
+    world:fire('SPELL_UPDATE_USABLE')
+
+    equal(glowing(world, world.side), false)
+    equal(world.addon.Config.Get('counterattackBar'), 0)
+end)
+
+test('disabling one reactive glow keeps the other active', function()
+    local world, addon = setup(function(w)
+        w.learned[#w.learned + 1] = 19306
+        w.env.HunterAssistForeverDB.counterattackBar = 1
+        w.env.HunterAssistForeverDB.counterattackButton = 1
+    end)
+    world.usable[1495] = true
+    world.usable[19306] = true
+    world:fire('SPELL_UPDATE_USABLE')
+
+    addon.Config.Set('mongooseGlowEnabled', false)
+
+    equal(glowing(world, world.side), false)
+    equal(glowing(world, world.main), true)
+end)
+
+test('Counterattack cooldown clears only its own glow', function()
+    local world = setup(function(w)
+        w.learned[#w.learned + 1] = 19306
+        w.env.HunterAssistForeverDB.counterattackBar = 1
+        w.env.HunterAssistForeverDB.counterattackButton = 1
+    end)
+    world.usable[1495] = true
+    world.usable[19306] = true
+    world:fire('SPELL_UPDATE_USABLE')
+
+    world.cooldowns[19306] = { startTime = 100, duration = 5, isEnabled = true, isOnGCD = true }
+    world.cooldowns[61304] = { startTime = 100, duration = 1.5, isEnabled = true }
+    world:fire('SPELL_UPDATE_COOLDOWN')
+
+    equal(glowing(world, world.side), true)
+    equal(glowing(world, world.main), false)
+end)
+
+test('shared button keeps Counterattack glow when Mongoose Bite expires', function()
+    local world = setup(function(w)
+        w.learned[#w.learned + 1] = 19306
+        w.env.HunterAssistForeverDB.counterattackBar = 5
+        w.env.HunterAssistForeverDB.counterattackButton = 7
+    end)
+    world.usable[1495] = true
+    world.usable[19306] = true
+    world:fire('SPELL_UPDATE_USABLE')
+
+    world.usable[1495] = false
+    world:fire('SPELL_UPDATE_USABLE')
 
     equal(glowing(world, world.side), true)
 end)
@@ -172,17 +257,21 @@ test('Mongoose Bite glow stays visible when usability briefly falls during GCD',
 end)
 
 test('Counterattack glow stays visible when usability briefly falls during GCD', function()
-    local world = setup(function(w) w.learned[#w.learned + 1] = 19306 end)
+    local world = setup(function(w)
+        w.learned[#w.learned + 1] = 19306
+        w.env.HunterAssistForeverDB.counterattackBar = 1
+        w.env.HunterAssistForeverDB.counterattackButton = 1
+    end)
     world.usable[19306] = true
     world:fire('SPELL_UPDATE_USABLE')
-    equal(glowing(world, world.side), true)
+    equal(glowing(world, world.main), true)
 
     world.usable[19306] = false
     world.cooldowns[19306] = { startTime = 100, duration = 1.5, isEnabled = true, isOnGCD = true }
     world.cooldowns[61304] = { startTime = 100, duration = 1.5, isEnabled = true }
     world:fire('SPELL_UPDATE_COOLDOWN')
 
-    equal(glowing(world, world.side), true)
+    equal(glowing(world, world.main), true)
 end)
 
 test('insufficient resources do not clear a reactive glow during GCD', function()
@@ -247,13 +336,24 @@ test('a real cooldown clears a previously active reactive glow', function()
     equal(glowing(world, world.side), false)
 end)
 
+test('GCD flag does not override a longer own cooldown', function()
+    local world = setup()
+    world.usable[1495] = true
+    world.cooldowns[1495] = { startTime = 100, duration = 6, isEnabled = true, isOnGCD = true }
+    world.cooldowns[61304] = { startTime = 100, duration = 1.5, isEnabled = true }
+
+    world:fire('SPELL_UPDATE_COOLDOWN')
+
+    equal(glowing(world, world.side), false)
+end)
+
 test('changing selected button clears the previous glow', function()
     local world, addon = setup()
     world.usable[1495] = true
     world:fire('SPELL_UPDATE_USABLE')
 
-    addon.Config.Set('reactiveButton', 1)
-    addon.Config.Set('reactiveBar', 1)
+    addon.Config.Set('mongooseButton', 1)
+    addon.Config.Set('mongooseBar', 1)
 
     equal(glowing(world, world.side), false)
     equal(glowing(world, world.main), true)
@@ -264,9 +364,10 @@ test('disabling clears glow and stops reactive polling', function()
     world.usable[1495] = true
     world:fire('SPELL_UPDATE_USABLE')
 
-    addon.Config.Set('reactiveGlowEnabled', false)
+    addon.Config.Set('mongooseGlowEnabled', false)
 
     equal(glowing(world, world.side), false)
+    equal(addon.ReactiveGlow.frame.scripts.OnUpdate, nil)
 end)
 
 test('leaving combat clears glow', function()
