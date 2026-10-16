@@ -11,9 +11,13 @@ local defaults = {
     mongooseGlowEnabled = true,
     mongooseBar = 3,
     mongooseButton = 3,
+    mongooseNativeColor = true,
+    mongooseGlowColor = "ffffd24a",
     counterattackGlowEnabled = true,
     counterattackBar = 0,
     counterattackButton = 1,
+    counterattackNativeColor = true,
+    counterattackGlowColor = "ff00bfa5",
     aspectCheckEnabled = true,
     aspectGlowEnabled = true,
     aspectX = 0,
@@ -39,7 +43,7 @@ local function valid(key, value)
         return false
     end
 
-    if key == "petFlashColor" then
+    if key == "petFlashColor" or key == "mongooseGlowColor" or key == "counterattackGlowColor" then
         return #value == 8 and value:match("^%x+$") ~= nil
     end
 
@@ -98,7 +102,7 @@ function Config.Initialize()
     for key, default in pairs(defaults) do
         if not valid(key, values[key]) then
             values[key] = default
-        elseif key == "petFlashColor" then
+        elseif key == "petFlashColor" or key == "mongooseGlowColor" or key == "counterattackGlowColor" then
             values[key] = "ff" .. values[key]:sub(3):lower()
         end
     end
@@ -145,7 +149,7 @@ function Config.Set(key, value)
         Config.Initialize()
     end
 
-    if key == "petFlashColor" then
+    if key == "petFlashColor" or key == "mongooseGlowColor" or key == "counterattackGlowColor" then
         value = "ff" .. value:sub(3):lower()
     end
 

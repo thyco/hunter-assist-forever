@@ -58,7 +58,7 @@ function panel:Initialize()
     scroll:SetPoint("TOPLEFT", canvas, "TOPLEFT", 0, -8)
     scroll:SetPoint("BOTTOMRIGHT", canvas, "BOTTOMRIGHT", -28, 8)
     local content = CreateFrame("Frame", nil, scroll)
-    content:SetSize(580, 1660)
+    content:SetSize(580, 1780)
     scroll:SetScrollChild(content)
     scroll:SetScript("OnSizeChanged", function(_, width)
         content:SetWidth(math.max(1, width))
@@ -67,11 +67,11 @@ function panel:Initialize()
     widgets.Text(content, "Hunter Assist Forever", 8, -8, "GameFontNormalLarge")
     local ammo = widgets.Section(content, "Ammo check", "Equipped ammunition · local low-ammo warning", -48, 380)
     local mongoose = widgets.Section(content, "Mongoose Bite glow",
-        "Combat only · dodge opportunity and own cooldown ready", -444, 210)
+        "Combat only · dodge opportunity and own cooldown ready", -444, 276)
     local counterattack = widgets.Section(content, "Counterattack glow",
-        "Combat only · parry opportunity and own cooldown ready", -670, 210)
-    local pet = widgets.Section(content, "Pet settings", "Pet health and happiness alerts", -896, 544)
-    local aspect = widgets.Section(content, "Aspect reminder", "Combat only · Cheetah or Pack active", -1456, 170)
+        "Combat only · parry opportunity and own cooldown ready", -736, 276)
+    local pet = widgets.Section(content, "Pet settings", "Pet health and happiness alerts", -1028, 544)
+    local aspect = widgets.Section(content, "Aspect reminder", "Combat only · Cheetah or Pack active", -1588, 170)
     self.sections = { ammo, mongoose, counterattack, pet, aspect }
 
     checkbox(aspect, "aspectCheckEnabled", "Show active Cheetah / Pack icon", -62,
@@ -141,9 +141,9 @@ function panel:Initialize()
     self.movePetButton = movePet
 
     checkbox(mongoose, "mongooseGlowEnabled", "Enable Mongoose Bite glow", -62,
-        "Use Blizzard's native glow when Mongoose Bite is usable and off its own cooldown.")
+        "Glow when Mongoose Bite is usable and off its own cooldown.")
     checkbox(counterattack, "counterattackGlowEnabled", "Enable Counterattack glow", -62,
-        "Use Blizzard's native glow when Counterattack is learned, usable and off its own cooldown.")
+        "Glow when Counterattack is learned, usable and off its own cooldown.")
     local bars = { { value = 0, label = "Not selected" } }
     for index, label in ipairs(addon.Buttons.Bars()) do
         bars[#bars + 1] = { value = index, label = label }
@@ -164,6 +164,15 @@ function panel:Initialize()
     self.controls.counterattackButton = widgets.Dropdown(counterattack, "Button", -136,
         setting("counterattackButton", "Counterattack button"), buttons,
         "Uses a fixed button position, including when the bar changes pages. Choose the button containing your spell or macro.")
+
+    checkbox(mongoose, "mongooseNativeColor", "Use Blizzard native glow", -174,
+        "Use Blizzard's original proc glow colors instead of the custom color below.")
+    color(mongoose, "mongooseGlowColor", "Custom glow color", -212,
+        "Choose the Mongoose Bite glow color. Uncheck Blizzard native glow to use it.")
+    checkbox(counterattack, "counterattackNativeColor", "Use Blizzard native glow", -174,
+        "Use Blizzard's original proc glow colors instead of the custom color below.")
+    color(counterattack, "counterattackGlowColor", "Custom glow color", -212,
+        "Choose the Counterattack glow color. Uncheck Blizzard native glow to use it.")
 
     checkbox(ammo, "ammoCheckEnabled", "Enable ammo check", -62,
         "Show equipped ammo status and warn below the configured threshold. Applies to hunters only.")

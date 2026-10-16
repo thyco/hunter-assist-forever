@@ -89,6 +89,16 @@ function Feature:Refresh(cooldownEvent)
 end
 
 function Feature:ApplySettings()
+    for _, kind in ipairs(kinds) do
+        local color
+        if not addon.Config.Get(kind .. "NativeColor") then
+            local red, green, blue = addon.Config.GetColor(kind .. "GlowColor")
+            color = { red, green, blue, 1 }
+        end
+
+        addon.Glow.ConfigureOwner(self.owners[kind], { color = color })
+    end
+
     self:Refresh()
 end
 

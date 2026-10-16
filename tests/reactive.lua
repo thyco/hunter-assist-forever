@@ -52,6 +52,14 @@ local function glowing(world, button)
     return false
 end
 
+local function glowColor(world, button)
+    for frame, active in pairs(world.glowActive) do
+        if frame.parent == button and active then
+            return world.glowOptionsByFrame[frame].color
+        end
+    end
+end
+
 test('dodge usability lights only the selected button with native glow', function()
     local world = setup()
     equal(glowing(world, world.side), false)
@@ -130,6 +138,49 @@ test('Mongoose Bite and Counterattack glow on their own selected buttons', funct
 
     equal(glowing(world, world.side), false)
     equal(glowing(world, world.main), true)
+end)
+
+test('each reactive glow exposes native color and custom color settings', function()
+    local _, addon = setup()
+
+    assert(addon.SettingsPanel.controls.mongooseNativeColor)
+    assert(addon.SettingsPanel.controls.mongooseGlowColor)
+    assert(addon.SettingsPanel.controls.counterattackNativeColor)
+    assert(addon.SettingsPanel.controls.counterattackGlowColor)
+    equal(addon.Config.Get('mongooseNativeColor'), true)
+    equal(addon.Config.Get('counterattackNativeColor'), true)
+end)
+
+test('custom colors apply independently and native restores immediately', function()
+    local world, addon = setup(function(w)
+        w.learned[#w.learned + 1] = 19306
+        w.env.HunterAssistForeverDB.counterattackBar = 1
+        w.env.HunterAssistForeverDB.counterattackButton = 1
+    end)
+    world.usable[1495] = true
+    world.usable[19306] = true
+    world:fire('SPELL_UPDATE_USABLE')
+
+    equal(glowColor(world, world.side), nil)
+    equal(glowColor(world, world.main), nil)
+
+    addon.Config.Set('mongooseGlowColor', 'ff0000ff')
+    addon.Config.Set('mongooseNativeColor', false)
+    local mongooseColor = glowColor(world, world.side)
+    equal(mongooseColor[1], 0)
+    equal(mongooseColor[3], 1)
+    equal(glowColor(world, world.main), nil)
+
+    addon.Config.Set('counterattackGlowColor', 'ffff0000')
+    addon.Config.Set('counterattackNativeColor', false)
+    local counterattackColor = glowColor(world, world.main)
+    equal(counterattackColor[1], 1)
+    equal(counterattackColor[3], 0)
+    equal(glowColor(world, world.side)[3], 1)
+
+    addon.Config.Set('mongooseNativeColor', true)
+    equal(glowColor(world, world.side), nil)
+    equal(glowColor(world, world.main)[1], 1)
 end)
 
 test('Counterattack is unselected by default and does not light Mongoose Bite button', function()

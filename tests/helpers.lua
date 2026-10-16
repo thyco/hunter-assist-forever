@@ -179,10 +179,12 @@ function Helpers.new()
     env.CreateFrame = frame
     -- Boundary double for the renderer; glow_integration loads the real library.
     world.glowActive = {}
+    world.glowOptionsByFrame = {}
     local glow = {
         ProcGlow_Start = function(target, options)
             world.glowActive[target] = true
             world.glowOptions = options
+            world.glowOptionsByFrame[target] = options
         end,
         ProcGlow_Stop = function(target) world.glowActive[target] = false end,
     }
