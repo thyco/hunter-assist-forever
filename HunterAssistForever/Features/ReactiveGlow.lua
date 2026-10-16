@@ -36,19 +36,23 @@ function Feature:Initialize()
         end
     end
 
-    for _, event in ipairs({ "SPELL_UPDATE_USABLE", "SPELL_UPDATE_COOLDOWN", "SPELLS_CHANGED",
+    for _, event in ipairs({ "SPELL_UPDATE_USABLE", "SPELL_UPDATE_COOLDOWN",
+        "UNIT_SPELLCAST_SUCCEEDED", "SPELLS_CHANGED",
         "PLAYER_TALENT_UPDATE", "PLAYER_REGEN_DISABLED", "PLAYER_REGEN_ENABLED",
         "PLAYER_ENTERING_WORLD", "PLAYER_LEAVING_WORLD", "ACTIONBAR_SLOT_CHANGED",
         "ACTIONBAR_PAGE_CHANGED", "SPELL_DATA_LOAD_RESULT" }) do
         frame:RegisterEvent(event)
     end
-    frame:SetScript("OnEvent", function(_, event)
+    frame:SetScript("OnEvent", function(_, event, unit, castGUID, spellID)
         if event == "PLAYER_LEAVING_WORLD" then
             self.loading = true
             self:Stop()
             return
         elseif event == "PLAYER_ENTERING_WORLD" then
             self.loading = false
+        elseif event == "UNIT_SPELLCAST_SUCCEEDED"
+            and not addon.ReactiveSpells:ReactiveCast(unit, spellID) then
+            return
         end
 
         if event == "SPELLS_CHANGED" or event == "PLAYER_TALENT_UPDATE"
@@ -121,6 +125,7 @@ function Feature:Stop()
     self.buttons = {}
     addon.ReactiveSpells.gcdOnly = {}
     addon.ReactiveSpells.procUsable = {}
+    addon.ReactiveSpells.consumedUntil = {}
     for _, kind in ipairs(kinds) do
         addon.Glow.ClearOwner(self.owners[kind])
     end

@@ -1,5 +1,6 @@
 local _, addon = ...
-local Spells = { ids = { mongoose = {}, counterattack = {} }, gcdOnly = {}, procUsable = {} }
+local Spells = { ids = { mongoose = {}, counterattack = {} }, gcdOnly = {},
+    procUsable = {}, consumedUntil = {} }
 addon.ReactiveSpells = Spells
 local seeds = { mongoose = 1495, counterattack = 19306 } -- Rank one.
 local gcdEvidenceSeconds = 1.6
@@ -60,7 +61,8 @@ local function gcdTiming(now)
 end
 
 function Spells:Rebuild()
-    self.ids, self.gcdOnly, self.procUsable = { mongoose = {}, counterattack = {} }, {}, {}
+    self.ids, self.gcdOnly, self.procUsable, self.consumedUntil =
+        { mongoose = {}, counterattack = {} }, {}, {}, {}
     local names, seen = {}, {}
     for kind, id in pairs(seeds) do
         local info = read(C_Spell and C_Spell.GetSpellInfo, id)
@@ -81,9 +83,38 @@ function Spells:Rebuild()
     end
 end
 
+function Spells:ReactiveCast(unit, spellID)
+    if not addon.Client.Readable(unit) or unit ~= "player"
+        or not addon.Client.Number(spellID) then
+        return false
+    end
+
+    for _, ranks in pairs(self.ids) do
+        for _, id in ipairs(ranks) do
+            if id == spellID then
+                local now = read(GetTime)
+                self.procUsable[id] = nil
+                self.gcdOnly[id] = nil
+                self.consumedUntil[id] = number(now) and now + gcdEvidenceSeconds or nil
+
+                return true
+            end
+        end
+    end
+
+    return false
+end
+
 function Spells:CooldownReady(id, cooldownEvent)
     local info = read(C_Spell and C_Spell.GetSpellCooldown, id)
     local now = read(GetTime)
+
+    local consumedDeadline = self.consumedUntil[id]
+    if number(now) and number(consumedDeadline) and now < consumedDeadline then
+        return false, false
+    end
+    self.consumedUntil[id] = nil
+
     if cooldownEvent and type(info) == "table"
         and addon.Client.Boolean(info.isOnGCD) == true then
         self.gcdOnly[id] = number(now) and now + gcdEvidenceSeconds or nil
