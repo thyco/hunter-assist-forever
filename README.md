@@ -1,10 +1,10 @@
 # Hunter Assist Forever
 
-A hunter-only helper for WoW Forever (interface 16001). Version 0.8.12 includes ammo, pet health and happiness indicators, a combat reminder for Aspect of the Cheetah / Pack, and separate Mongoose Bite and Counterattack glows. Range tinting has been removed.
+A hunter-only helper for WoW Forever (interface 16001). Version 0.8.13 includes ammo, pet health and happiness indicators, a combat reminder for Aspect of the Cheetah / Pack, and separate Mongoose Bite and Counterattack glows. Range tinting has been removed.
 
 ## Install
 
-Replace the existing `Interface/AddOns/HunterAssistForever` folder with the folder in `dist/HunterAssistForever-0.8.12.zip`, then reload the UI. Existing settings are retained; obsolete range settings are ignored.
+Replace the existing `Interface/AddOns/HunterAssistForever` folder with the folder in `dist/HunterAssistForever-0.8.13.zip`, then reload the UI. Existing settings are retained; obsolete range settings are ignored.
 
 Open **Settings → AddOns → Hunter Assist Forever**, or type `/haf config`.
 
@@ -34,7 +34,7 @@ Each spell has its own settings group in `/haf config`, with an enable checkbox 
 
 Each glow also has **Use Blizzard native glow** (on by default) and its own **Custom glow color** picker, as in Warrior Assist Forever. Uncheck native glow to use the chosen color. Changes to either setting update an active glow immediately; switching native back on restores Blizzard's original colors. The two choices are saved independently.
 
-**Show Counterattack icon overlay** is on by default. During a Counterattack opportunity, it shows the Counterattack icon over the selected button with a separate GCD swipe. It hides when the opportunity ends, Counterattack enters its own cooldown, combat ends, or the setting is disabled. The action, key binding, tooltip and underlying cooldown remain those of the original button; the overlay never chooses or casts a spell. The existing proc glow can be toggled independently. The overlay is prepared outside combat, so a newly selected button during combat may need to wait until combat ends before its overlay appears.
+**Show Counterattack icon overlay** is on by default. During a Counterattack opportunity, it shows the Counterattack icon over the selected button with a separate GCD swipe. It hides when the opportunity ends, Counterattack enters its own cooldown, combat ends, or the setting is disabled. The action, key binding and tooltip remain those of the original button. Its cooldown keeps running but is covered visually while the Counterattack icon appears; the overlay never chooses or casts a spell. The existing proc glow can be toggled independently. The overlay is prepared outside combat, so a newly selected button during combat may need to wait until combat ends before its overlay appears.
 
 In combat, each selected button glows when its learned spell is reported usable by `C_Spell.IsSpellUsable` and is off its own cooldown. Mongoose Bite therefore requires the client's dodge opportunity; Counterattack requires its parry opportunity. Counterattack is ignored until learned, and learned ranks are matched by localized spell name. The API's insufficient-resource result also counts as an available opportunity, and a confirmed glow stays visible through a global cooldown. A real spell cooldown, expired opportunity, or unavailable/restricted usability data clears that spell's glow. This is a readiness reminder, not a target-range or facing check.
 

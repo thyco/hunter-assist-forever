@@ -183,6 +183,29 @@ test('Counterattack overlay uses the Forever GCD when duration objects are unava
     equal(addon.CounterattackOverlay.cooldown.cooldownLength, 1.5)
 end)
 
+test('Counterattack icon covers the underlying action cooldown and keeps proc glow above it', function()
+    local world, addon = setup(function(w)
+        w.learned[#w.learned + 1] = 19306
+        w.env.HunterAssistForeverDB.counterattackBar = 1
+        w.env.HunterAssistForeverDB.counterattackButton = 1
+
+        w.main.cooldown = w.env.CreateFrame('Cooldown', nil, w.main)
+        w.main.cooldown:SetFrameLevel(12)
+        w.main.chargeCooldown = w.env.CreateFrame('Cooldown', nil, w.main)
+        w.main.chargeCooldown:SetFrameLevel(14)
+    end)
+    world.usable[19306] = true
+
+    world:fire('SPELL_UPDATE_USABLE')
+
+    local overlayLevel = addon.CounterattackOverlay.frame:GetFrameLevel()
+    local glowLevel = addon.Glow.Prepare(world.main).frame:GetFrameLevel()
+    assert(overlayLevel > world.main.cooldown:GetFrameLevel())
+    assert(overlayLevel > world.main.chargeCooldown:GetFrameLevel())
+    assert(glowLevel > overlayLevel)
+    equal(addon.CounterattackOverlay.cooldown.drawSwipe, true)
+end)
+
 test('Counterattack icon disappears when proc ends or its own cooldown starts', function()
     local world, addon = setup(function(w)
         w.learned[#w.learned + 1] = 19306

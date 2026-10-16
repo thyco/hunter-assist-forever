@@ -23,6 +23,22 @@ local function spellTexture()
     end
 end
 
+local function overlayLevel(button)
+    local level = button:GetFrameLevel() + 5
+
+    for _, key in ipairs({ "cooldown", "chargeCooldown", "lossOfControlCooldown" }) do
+        local cooldown = button[key]
+        if cooldown and type(cooldown.GetFrameLevel) == "function" then
+            local ok, cooldownLevel = pcall(cooldown.GetFrameLevel, cooldown)
+            if ok and addon.Client.Number(cooldownLevel) then
+                level = math.max(level, cooldownLevel + 2)
+            end
+        end
+    end
+
+    return level
+end
+
 function Overlay:Prepare(button)
     if not button or self.entries[button] or self.unavailable or InCombatLockdown() then
         return
@@ -38,7 +54,7 @@ function Overlay:Prepare(button)
         frame = CreateFrame("Frame", nil, button)
         frame:Hide()
         frame:SetAllPoints(button.icon or button)
-        frame:SetFrameLevel(button:GetFrameLevel() + 5)
+        frame:SetFrameLevel(overlayLevel(button))
         frame:EnableMouse(false)
 
         local icon = frame:CreateTexture(nil, "ARTWORK")
@@ -58,6 +74,11 @@ function Overlay:Prepare(button)
 
     if ok then
         self.entries[button] = entry
+
+        local glow = addon.Glow.Prepare(button)
+        if glow then
+            pcall(glow.frame.SetFrameLevel, glow.frame, entry.frame:GetFrameLevel() + 2)
+        end
     else
         if frame then
             frame:Hide()
