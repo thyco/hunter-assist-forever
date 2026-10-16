@@ -54,6 +54,7 @@ function Overlay:Prepare(button)
         frame = CreateFrame("Frame", nil, button)
         frame:Hide()
         frame:SetAllPoints(button.icon or button)
+        frame:SetFrameStrata("DIALOG")
         frame:SetFrameLevel(overlayLevel(button))
         frame:EnableMouse(false)
 
@@ -63,6 +64,7 @@ function Overlay:Prepare(button)
 
         local cooldown = CreateFrame("Cooldown", nil, frame)
         cooldown:SetAllPoints(frame)
+        cooldown.noCooldownCount = true
         cooldown:EnableMouse(false)
         cooldown:SetDrawBling(false)
         cooldown:SetDrawEdge(false)
@@ -77,6 +79,7 @@ function Overlay:Prepare(button)
 
         local glow = addon.Glow.Prepare(button)
         if glow then
+            pcall(glow.frame.SetFrameStrata, glow.frame, "DIALOG")
             pcall(glow.frame.SetFrameLevel, glow.frame, entry.frame:GetFrameLevel() + 2)
         end
     else

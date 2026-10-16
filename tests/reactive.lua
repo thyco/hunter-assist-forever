@@ -200,10 +200,13 @@ test('Counterattack icon covers the underlying action cooldown and keeps proc gl
 
     local overlayLevel = addon.CounterattackOverlay.frame:GetFrameLevel()
     local glowLevel = addon.Glow.Prepare(world.main).frame:GetFrameLevel()
+    equal(addon.CounterattackOverlay.frame.strata, 'DIALOG')
+    equal(addon.Glow.Prepare(world.main).frame.strata, 'DIALOG')
     assert(overlayLevel > world.main.cooldown:GetFrameLevel())
     assert(overlayLevel > world.main.chargeCooldown:GetFrameLevel())
     assert(glowLevel > overlayLevel)
     equal(addon.CounterattackOverlay.cooldown.drawSwipe, true)
+    equal(addon.CounterattackOverlay.cooldown.noCooldownCount, true)
 end)
 
 test('Counterattack icon disappears when proc ends or its own cooldown starts', function()
@@ -484,6 +487,59 @@ test('Mongoose Bite glow stays visible when usability briefly falls during GCD',
     equal(glowing(world, world.side), false)
 end)
 
+test('GCD evidence and a zero own cooldown keep Mongoose Bite glowing despite timing differences', function()
+    local world = setup()
+    world.usable[1495] = true
+    world:fire('SPELL_UPDATE_USABLE')
+
+    world.usable[1495] = false
+    world.cooldowns[1495] = { startTime = 100.02, duration = 1.48,
+        isEnabled = true, isActive = true, isOnGCD = true }
+    world.cooldowns[29515] = { startTime = 100, duration = 1.5, isEnabled = true }
+    world.env.C_Spell.GetSpellCooldownDuration = function(id, ignoreGCD)
+        if id == 1495 and ignoreGCD then
+            return {
+                HasSecretValues = function() return false end,
+                IsZero = function() return true end,
+            }
+        end
+    end
+
+    world:fire('SPELL_UPDATE_COOLDOWN')
+    world:tick(0.1)
+
+    equal(glowing(world, world.side), true)
+end)
+
+test('GCD evidence and a zero own cooldown keep Counterattack overlay visible', function()
+    local world, addon = setup(function(w)
+        w.learned[#w.learned + 1] = 19306
+        w.env.HunterAssistForeverDB.counterattackBar = 1
+        w.env.HunterAssistForeverDB.counterattackButton = 1
+    end)
+    world.usable[19306] = true
+    world:fire('SPELL_UPDATE_USABLE')
+
+    world.usable[19306] = false
+    world.cooldowns[19306] = { startTime = 100.02, duration = 1.48,
+        isEnabled = true, isActive = true, isOnGCD = true }
+    world.cooldowns[29515] = { startTime = 100, duration = 1.5, isEnabled = true }
+    world.env.C_Spell.GetSpellCooldownDuration = function(id, ignoreGCD)
+        if id == 19306 and ignoreGCD then
+            return {
+                HasSecretValues = function() return false end,
+                IsZero = function() return true end,
+            }
+        end
+    end
+
+    world:fire('SPELL_UPDATE_COOLDOWN')
+    world:tick(0.1)
+
+    equal(glowing(world, world.main), true)
+    equal(addon.CounterattackOverlay.frame.shown, true)
+end)
+
 test('event GCD evidence preserves the proc when combat cooldown timings are restricted', function()
     local world = setup()
     world.usable[1495] = true
@@ -495,6 +551,52 @@ test('event GCD evidence preserves the proc when combat cooldown timings are res
     world:fire('SPELL_UPDATE_COOLDOWN')
     world.cooldowns[1495].isOnGCD = nil
     world:tick(0.1)
+
+    equal(glowing(world, world.side), true)
+end)
+
+test('event GCD evidence expires instead of keeping a stale proc glow', function()
+    local world = setup()
+    world.usable[1495] = true
+    world:fire('SPELL_UPDATE_USABLE')
+
+    world.usable[1495] = false
+    world.cooldowns[1495] = { startTime = world.secret, duration = world.secret,
+        isEnabled = true, isActive = true, isOnGCD = true }
+    world:fire('SPELL_UPDATE_COOLDOWN')
+    world.cooldowns[1495].isOnGCD = nil
+    world.now = 102
+
+    world:tick(0.1)
+
+    equal(glowing(world, world.side), false)
+end)
+
+test('usability event before cooldown event does not erase a proc at GCD start', function()
+    local world = setup()
+    world.usable[1495] = true
+    world:fire('SPELL_UPDATE_USABLE')
+
+    world.usable[1495] = false
+    world.cooldowns[1495] = { startTime = world.secret, duration = world.secret,
+        isEnabled = true, isActive = true }
+    world.cooldowns[29515] = { startTime = world.secret, duration = world.secret,
+        isEnabled = true, isActive = true }
+    world.env.C_Spell.GetSpellCooldownDuration = function(id, ignoreGCD)
+        if id == 1495 and ignoreGCD then
+            return {
+                HasSecretValues = function() return false end,
+                IsZero = function() return true end,
+            }
+        end
+    end
+
+    world:fire('SPELL_UPDATE_USABLE')
+
+    equal(glowing(world, world.side), true)
+
+    world.cooldowns[1495].isOnGCD = true
+    world:fire('SPELL_UPDATE_COOLDOWN')
 
     equal(glowing(world, world.side), true)
 end)
@@ -584,6 +686,27 @@ test('GCD flag does not override a longer own cooldown', function()
     world.usable[1495] = true
     world.cooldowns[1495] = { startTime = 100, duration = 6, isEnabled = true, isOnGCD = true }
     world.cooldowns[29515] = { startTime = 100, duration = 1.5, isEnabled = true }
+
+    world:fire('SPELL_UPDATE_COOLDOWN')
+
+    equal(glowing(world, world.side), false)
+end)
+
+test('a readable own cooldown blocks glow even when event also reports GCD', function()
+    local world = setup()
+    world.usable[1495] = true
+    world.cooldowns[1495] = { startTime = 100, duration = 1.5,
+        isEnabled = true, isActive = true, isOnGCD = true }
+    world.cooldowns[29515] = { startTime = 100, duration = 1.5, isEnabled = true }
+    world.env.C_Spell.GetSpellCooldownDuration = function(id, ignoreGCD)
+        if id == 1495 and ignoreGCD then
+            return {
+                HasSecretValues = function() return false end,
+                IsZero = function() return false end,
+                HasExpired = function() return false end,
+            }
+        end
+    end
 
     world:fire('SPELL_UPDATE_COOLDOWN')
 

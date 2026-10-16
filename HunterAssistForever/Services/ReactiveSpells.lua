@@ -2,6 +2,7 @@ local _, addon = ...
 local Spells = { ids = { mongoose = {}, counterattack = {} }, gcdOnly = {}, procUsable = {} }
 addon.ReactiveSpells = Spells
 local seeds = { mongoose = 1495, counterattack = 19306 } -- Rank one.
+local gcdEvidenceSeconds = 1.6
 
 local function read(api, ...)
     if type(api) ~= "function" then
@@ -31,6 +32,33 @@ local function spellUsability(id)
     return addon.Client.Boolean(usable), addon.Client.Boolean(noMana)
 end
 
+local function durationBoolean(duration, methodName)
+    local ok, method = pcall(function() return duration[methodName] end)
+    if not ok or not addon.Client.Readable(method) or type(method) ~= "function" then
+        return nil
+    end
+
+    return addon.Client.Boolean(read(method, duration))
+end
+
+local function gcdTiming(now)
+    local info = read(C_Spell and C_Spell.GetSpellCooldown, addon.gcdSpellID)
+    if type(info) ~= "table" then
+        return nil, nil, false
+    end
+
+    local active = addon.Client.Boolean(info.isActive) == true
+    if not number(info.startTime) or not number(info.duration) or not number(now) then
+        return nil, nil, active
+    end
+
+    if info.duration == 0 or now >= info.startTime + info.duration then
+        return nil, nil, false
+    end
+
+    return info.startTime, info.duration, true
+end
+
 function Spells:Rebuild()
     self.ids, self.gcdOnly, self.procUsable = { mongoose = {}, counterattack = {} }, {}, {}
     local names, seen = {}, {}
@@ -55,38 +83,62 @@ end
 
 function Spells:CooldownReady(id, cooldownEvent)
     local info = read(C_Spell and C_Spell.GetSpellCooldown, id)
+    local now = read(GetTime)
     if cooldownEvent then
-        self.gcdOnly[id] = type(info) == "table" and addon.Client.Boolean(info.isOnGCD) == true or nil
+        self.gcdOnly[id] = type(info) == "table" and addon.Client.Boolean(info.isOnGCD) == true
+            and number(now) and now + gcdEvidenceSeconds or nil
     end
     if type(info) ~= "table" then
         return false, false
     end
 
     if addon.Client.Boolean(info.isEnabled) == false then
-        return false, false
-    elseif addon.Client.Boolean(info.isActive) == false then
         self.gcdOnly[id] = nil
-        return true, false
+        return false, false
+    end
+
+    local gcdStart, gcdDuration, gcdActive = gcdTiming(now)
+    local gcdEvidence = number(now) and number(self.gcdOnly[id]) and now < self.gcdOnly[id]
+    if not gcdEvidence then
+        self.gcdOnly[id] = nil
+    end
+    local gcdOnly = gcdEvidence or gcdActive
+
+    if addon.Client.Boolean(info.isActive) == false then
+        return true, gcdOnly
+    end
+
+    local ownDuration = read(C_Spell and C_Spell.GetSpellCooldownDuration, id, true)
+    if ownDuration and durationBoolean(ownDuration, "HasSecretValues") == false then
+        local zero = durationBoolean(ownDuration, "IsZero")
+        local expired = durationBoolean(ownDuration, "HasExpired")
+        if zero == true or expired == true then
+            return true, gcdOnly
+        elseif zero == false and expired == false then
+            self.gcdOnly[id] = nil
+            return false, false
+        end
     end
 
     local start, duration = info.startTime, info.duration
-    local now = read(GetTime)
     if not number(start) or not number(duration) then
-        return self.gcdOnly[id] == true, self.gcdOnly[id] == true
+        return gcdEvidence == true, gcdEvidence == true
     end
     if start == 0 or duration == 0 then
-        self.gcdOnly[id] = nil
-        return true, addon.Client.Boolean(info.isOnGCD) == true
+        return true, gcdOnly
     end
 
     if not number(now) then
         return false, false
     end
 
-    local gcd = read(C_Spell and C_Spell.GetSpellCooldown, addon.gcdSpellID)
-    if type(gcd) == "table" and number(gcd.startTime) and number(gcd.duration)
-        and gcd.duration > 0 and start == gcd.startTime and duration == gcd.duration
-        and now < start + duration then
+    if gcdStart and duration > gcdDuration + 0.1
+        and start + duration > gcdStart + gcdDuration + 0.1 then
+        self.gcdOnly[id] = nil
+        return false, false
+    end
+
+    if gcdEvidence or (gcdStart and start == gcdStart and duration == gcdDuration) then
         return true, true
     end
 
