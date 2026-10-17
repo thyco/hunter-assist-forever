@@ -98,7 +98,11 @@ function Spells:ReactiveCast(unit, spellID)
                     self.gcdOnly[rankID] = nil
                 end
 
-                self.consumed[kind] = number(now) and now + gcdEvidenceSeconds or true
+                self.consumed[kind] = {
+                    spellID = id,
+                    deadline = number(now) and now + gcdEvidenceSeconds or nil,
+                    ownCooldownSeen = false,
+                }
 
                 return true
             end
@@ -133,7 +137,7 @@ function Spells:CooldownReady(id, cooldownEvent)
     local gcdOnly = gcdEvidence or gcdActive
 
     if addon.Client.Boolean(info.isActive) == false then
-        return true, gcdOnly
+        return true, gcdOnly, "ready"
     end
 
     local ownDuration = read(C_Spell and C_Spell.GetSpellCooldownDuration, id, true)
@@ -141,19 +145,19 @@ function Spells:CooldownReady(id, cooldownEvent)
         local zero = durationBoolean(ownDuration, "IsZero")
         local expired = durationBoolean(ownDuration, "HasExpired")
         if zero == true or expired == true then
-            return true, gcdOnly
+            return true, gcdOnly, "ready"
         elseif zero == false and expired == false then
             self.gcdOnly[id] = nil
-            return false, false
+            return false, false, "active"
         end
     end
 
     local start, duration = info.startTime, info.duration
     if not number(start) or not number(duration) then
-        return gcdOnly == true, gcdOnly == true
+        return gcdOnly == true, gcdOnly == true, gcdOnly and nil or "active"
     end
     if start == 0 or duration == 0 then
-        return true, gcdOnly
+        return true, gcdOnly, "ready"
     end
 
     if not number(now) then
@@ -163,7 +167,7 @@ function Spells:CooldownReady(id, cooldownEvent)
     if gcdStart and duration > gcdDuration + 0.1
         and start + duration > gcdStart + gcdDuration + 0.1 then
         self.gcdOnly[id] = nil
-        return false, false
+        return false, false, "active"
     end
 
     if gcdEvidence or (gcdStart and duration <= gcdDuration + 0.1
@@ -173,25 +177,37 @@ function Spells:CooldownReady(id, cooldownEvent)
 
     if now >= start + duration then
         self.gcdOnly[id] = nil
-        return true, false
+        return true, false, "ready"
     end
 
-    return false, false
+    return false, false, "active"
 end
 
 function Spells:Ready(kind, cooldownEvent)
     local ready = false
-    local consumedDeadline = self.consumed[kind]
-    local allInactive = consumedDeadline ~= nil and #(self.ids[kind] or {}) > 0
+    local consumed = self.consumed[kind]
+    local allInactive = consumed ~= nil and #(self.ids[kind] or {}) > 0
+    local castCooldownReady = false
 
     for _, id in ipairs(self.ids[kind] or {}) do
-        local cooldownReady, gcdOnly = self:CooldownReady(id, cooldownEvent)
+        local cooldownReady, gcdOnly, ownCooldownState = self:CooldownReady(id, cooldownEvent)
         local usable, noMana = spellUsability(id)
-        if consumedDeadline then
+        if consumed then
             self.procUsable[id] = nil
 
             if usable ~= false or noMana == true or gcdOnly then
                 allInactive = false
+            end
+
+            if id == consumed.spellID then
+                local now = read(GetTime)
+                if number(now) and number(consumed.deadline) and now >= consumed.deadline then
+                    if ownCooldownState == "active" and not gcdOnly then
+                        consumed.ownCooldownSeen = true
+                    elseif ownCooldownState == "ready" then
+                        castCooldownReady = true
+                    end
+                end
             end
         else
             -- Resource shortage also reports a usable reactive opportunity; a known GCD preserves it.
@@ -202,15 +218,18 @@ function Spells:Ready(kind, cooldownEvent)
             end
         end
 
-        if not consumedDeadline and cooldownReady and self.procUsable[id] then
+        if not consumed and cooldownReady and self.procUsable[id] then
             ready = true
         end
     end
 
     local now = read(GetTime)
-    if allInactive and number(now) and number(consumedDeadline)
-        and now >= consumedDeadline then
+    if consumed and number(now) and number(consumed.deadline) and now >= consumed.deadline
+        and ((consumed.ownCooldownSeen and castCooldownReady)
+            or (not consumed.ownCooldownSeen and allInactive)) then
         self.consumed[kind] = nil
+
+        return self:Ready(kind, false)
     end
 
     return ready

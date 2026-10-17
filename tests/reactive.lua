@@ -324,6 +324,78 @@ test('consumed Mongoose Bite stays hidden until dodge opportunity ends', functio
     equal(glowing(world, world.side), true)
 end)
 
+test('Mongoose Bite glows when a new proc survives its own cooldown', function()
+    local world = setup()
+    world.usable[1495] = true
+    world:fire('SPELL_UPDATE_USABLE')
+    world:fire('UNIT_SPELLCAST_SUCCEEDED', 'player', 'cast-guid', 1495)
+
+    world.cooldowns[1495] = { startTime = 100, duration = 5,
+        isEnabled = true, isActive = true, isOnGCD = true }
+    world.cooldowns[29515] = { startTime = 100, duration = 1.5, isActive = true }
+    world:fire('SPELL_UPDATE_COOLDOWN')
+
+    world.now = 102
+    world.cooldowns[29515] = { startTime = 0, duration = 0, isActive = false }
+    world:tick(0.1)
+    equal(glowing(world, world.side), false)
+
+    world.now = 105.1
+    world.cooldowns[1495] = { startTime = 0, duration = 0,
+        isEnabled = true, isActive = false }
+    world:fire('SPELL_UPDATE_COOLDOWN')
+
+    equal(glowing(world, world.side), true)
+end)
+
+test('Counterattack overlay returns for a new proc after its own cooldown', function()
+    local world, addon = setup(function(w)
+        w.learned[#w.learned + 1] = 19306
+        w.env.HunterAssistForeverDB.counterattackBar = 1
+        w.env.HunterAssistForeverDB.counterattackButton = 1
+    end)
+    world.usable[19306] = true
+    world:fire('SPELL_UPDATE_USABLE')
+    world:fire('UNIT_SPELLCAST_SUCCEEDED', 'player', 'cast-guid', 19306)
+
+    world.cooldowns[19306] = { startTime = 100, duration = 5,
+        isEnabled = true, isActive = true, isOnGCD = true }
+    world.cooldowns[29515] = { startTime = 100, duration = 1.5, isActive = true }
+    world:fire('SPELL_UPDATE_COOLDOWN')
+
+    world.now = 102
+    world.cooldowns[29515] = { startTime = 0, duration = 0, isActive = false }
+    world:tick(0.1)
+    equal(addon.CounterattackOverlay.frame.shown, false)
+
+    world.now = 105.1
+    world.cooldowns[19306] = { startTime = 0, duration = 0,
+        isEnabled = true, isActive = false }
+    world:fire('SPELL_UPDATE_COOLDOWN')
+
+    equal(addon.CounterattackOverlay.frame.shown, true)
+end)
+
+test('a restricted own cooldown can rearm a consumed Mongoose Bite proc', function()
+    local world = setup()
+    world.usable[1495] = true
+    world:fire('SPELL_UPDATE_USABLE')
+    world:fire('UNIT_SPELLCAST_SUCCEEDED', 'player', 'cast-guid', 1495)
+
+    world.now = 102
+    world.cooldowns[1495] = { startTime = world.secret, duration = world.secret,
+        isEnabled = true, isActive = true }
+    world:fire('SPELL_UPDATE_COOLDOWN')
+    equal(glowing(world, world.side), false)
+
+    world.now = 105.1
+    world.cooldowns[1495] = { startTime = world.secret, duration = world.secret,
+        isEnabled = true, isActive = false }
+    world:fire('SPELL_UPDATE_COOLDOWN')
+
+    equal(glowing(world, world.side), true)
+end)
+
 test('another player spell does not consume Counterattack opportunity', function()
     local world, addon = setup(function(w)
         w.learned[#w.learned + 1] = 19306
