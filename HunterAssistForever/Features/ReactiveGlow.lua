@@ -32,7 +32,7 @@ function Feature:Initialize()
         elapsed = elapsed + delta
         if elapsed >= 0.1 then
             elapsed = 0
-            self:Refresh()
+            self:Refresh(false, "poll")
         end
     end
 
@@ -59,11 +59,11 @@ function Feature:Initialize()
             or event == "PLAYER_ENTERING_WORLD" or event == "SPELL_DATA_LOAD_RESULT" then
             addon.ReactiveSpells:Rebuild()
         end
-        self:Refresh(event == "SPELL_UPDATE_COOLDOWN")
+        self:Refresh(event == "SPELL_UPDATE_COOLDOWN", event)
     end)
 end
 
-function Feature:Refresh(cooldownEvent)
+function Feature:Refresh(cooldownEvent, source)
     self:Prepare()
     if self.loading then
         self:Stop()
@@ -87,7 +87,7 @@ function Feature:Refresh(cooldownEvent)
 
         if combat and button then
             polling = true
-            self.ready[kind] = addon.ReactiveSpells:Ready(kind, cooldownEvent)
+            self.ready[kind] = addon.ReactiveSpells:Ready(kind, cooldownEvent, source)
             local visible = button:IsVisible() and self.ready[kind]
             addon.Glow.Set(button, owner, visible and addon.Config.Get(kind .. "GlowEnabled"))
             if kind == "counterattack" then

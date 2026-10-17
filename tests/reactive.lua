@@ -1080,5 +1080,43 @@ test('usability API failure clears an existing glow', function()
     equal(glowing(world, world.side), false)
 end)
 
+test('opt-in reactive diagnostics retain cooldown transitions until requested', function()
+    local world = setup()
+    world.env.SlashCmdList.HUNTERASSISTFOREVER('reactive-debug')
+    world.usable[1495] = true
+    world:fire('SPELL_UPDATE_USABLE')
+    world:fire('UNIT_SPELLCAST_SUCCEEDED', 'player', 'cast-guid', 1495)
+
+    world.cooldowns[1495] = { startTime = 100, duration = 5,
+        isEnabled = true, isActive = true, isOnGCD = true }
+    world:fire('SPELL_UPDATE_COOLDOWN')
+    world.now = 102
+    world:tick(0.1)
+    world.now = 105.1
+    world.cooldowns[1495] = { startTime = 0, duration = 0,
+        isEnabled = true, isActive = false }
+    world:fire('SPELL_UPDATE_COOLDOWN')
+    world.env.SlashCmdList.HUNTERASSISTFOREVER('reactive-log mongoose')
+
+    local output = table.concat(world.messages, '\n')
+    assert(output:find('own=active', 1, true), output)
+    assert(output:find('consumed=true', 1, true), output)
+    assert(output:find('ready=true', 1, true), output)
+end)
+
+test('reactive diagnostics safely label restricted cooldown values', function()
+    local world = setup()
+    world.env.SlashCmdList.HUNTERASSISTFOREVER('reactive-debug')
+    world.usable[1495] = true
+    world.cooldowns[1495] = { startTime = world.secret, duration = world.secret,
+        isEnabled = true, isActive = world.secret, isOnGCD = world.secret }
+
+    world:fire('SPELL_UPDATE_COOLDOWN')
+    world.env.SlashCmdList.HUNTERASSISTFOREVER('reactive-log mongoose')
+
+    local output = table.concat(world.messages, '\n')
+    assert(output:find('secret', 1, true), output)
+end)
+
 print(string.format('\n%d passed, %d failed', passed, failed))
 os.exit(failed == 0 and 0 or 1)

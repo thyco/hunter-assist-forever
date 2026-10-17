@@ -1,10 +1,10 @@
 # Hunter Assist Forever
 
-A hunter-only helper for WoW Forever (interface 16001). Version 0.8.18 includes ammo, pet health and happiness indicators, a combat reminder for Aspect of the Cheetah / Pack, and separate Mongoose Bite and Counterattack glows. Range tinting has been removed.
+A hunter-only helper for WoW Forever (interface 16001). Version 0.8.19 includes ammo, pet health and happiness indicators, a combat reminder for Aspect of the Cheetah / Pack, and separate Mongoose Bite and Counterattack glows. Range tinting has been removed.
 
 ## Install
 
-Replace the existing `Interface/AddOns/HunterAssistForever` folder with the folder in `dist/HunterAssistForever-0.8.18.zip`, then reload the UI. Existing settings are retained; obsolete range settings are ignored.
+Replace the existing `Interface/AddOns/HunterAssistForever` folder with the folder in `dist/HunterAssistForever-0.8.19.zip`, then reload the UI. Existing settings are retained; obsolete range settings are ignored.
 
 Open **Settings → AddOns → Hunter Assist Forever**, or type `/haf config`.
 
@@ -66,6 +66,8 @@ When readable pet health first falls to or below its threshold during combat, a 
 ## Diagnostics and development
 
 `/haf` prints the client version and current ammo, pet and aspect status. No spell range APIs or deadzone tint hooks are used. The reactive glow retains its combat-only readiness updates.
+
+For a reactive glow that stays hidden after its spell cooldown ends, enable temporary diagnostics with `/haf reactive-debug`. When it happens, use `/haf reactive-log mongoose` or `/haf reactive-log counterattack` to print the last 40 state changes for that spell. The log stays in memory for this session only; run `/haf reactive-debug` again to turn it off and clear it. Diagnostics do not change the glow decision.
 
 Run `lua tests/ammo.lua`, `lua tests/reactive.lua`, `lua tests/glow_integration.lua`, `lua tests/pet.lua`, `lua tests/aspect.lua` and `python3 scripts/package.py`. Tests cover thresholds, warning rearming, restricted values, settings, moving the icons, class gating and upgrading with old saved settings. Real-client verification is still needed for visual layout and API behavior.
 

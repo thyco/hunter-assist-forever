@@ -16,6 +16,24 @@ SlashCmdList.HUNTERASSISTFOREVER = function(message)
         return
     end
 
+    if command == "reactive-debug" then
+        local enabled = not addon.ReactiveSpells.diagnostics.enabled
+        addon.ReactiveSpells:SetDiagnostics(enabled)
+        print("Reactive diagnostics " .. (enabled and "on" or "off")
+            .. ". Use /haf reactive-log mongoose or /haf reactive-log counterattack after the issue occurs.")
+        return
+    end
+
+    local diagnosticKind = command:match("^reactive%-log%s+(%S+)$")
+    if diagnosticKind == "mongoose" or diagnosticKind == "counterattack" then
+        local lines = addon.ReactiveSpells:DiagnosticLines(diagnosticKind)
+        print("Reactive diagnostics: " .. diagnosticKind .. " (" .. #lines .. " changes)")
+        for _, line in ipairs(lines) do
+            print(line)
+        end
+        return
+    end
+
     local version, build, _, interface = GetBuildInfo()
     print("Hunter Assist Forever " .. addon.version .. " | client " .. version
         .. " (" .. build .. ") | interface " .. interface)
